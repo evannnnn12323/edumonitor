@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ClassProvider, useClasses } from './context/ClassContext';
+import { MaterialProvider } from './context/MaterialContext';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -11,9 +12,11 @@ import { ExamCreatePage } from './pages/teacher/ExamCreatePage';
 import { ExamResultPage } from './pages/teacher/ExamResultPage';
 import { TeacherClassesPage } from './pages/teacher/TeacherClassesPage';
 import { TeacherSettingsPage } from './pages/teacher/TeacherSettingsPage';
+import { TeacherMaterialsPage } from './pages/teacher/TeacherMaterialsPage';
 import { StudentDashboard } from './pages/student/StudentDashboard';
+import { StudentMaterialsPage } from './pages/student/StudentMaterialsPage';
 import { TakeExamPage } from './pages/student/TakeExamPage';
-import { DEMO_MATERIALS, DEMO_EXAM, DEMO_USERS } from './lib/demoData';
+import { DEMO_EXAM, DEMO_USERS } from './lib/demoData';
 import { MathText } from './components/common/MathText';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
@@ -60,6 +63,7 @@ const MainAppContent: React.FC = () => {
               {currentTab === 'question-bank' && <QuestionBankPage />}
               {currentTab === 'results' && <ExamResultPage />}
               {currentTab === 'settings' && <TeacherSettingsPage />}
+              {currentTab === 'materials' && <TeacherMaterialsPage />}
 
               {currentTab === 'exams' && (
                 <div className="space-y-4">
@@ -104,20 +108,6 @@ const MainAppContent: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-
-              {currentTab === 'materials' && (
-                <div className="space-y-4">
-                  <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Materi Pembelajaran</h1>
-                  {DEMO_MATERIALS.map(m => (
-                    <div key={m.id} className="glass-panel rounded-3xl p-6 border border-white/10 space-y-3">
-                      <h3 className="text-base font-bold text-white">{m.title}</h3>
-                      <div className="text-xs text-slate-300 leading-relaxed font-mono">
-                        <MathText text={m.content} />
-                      </div>
-                    </div>
-                  ))}
                 </div>
               )}
 
@@ -200,19 +190,7 @@ const MainAppContent: React.FC = () => {
                 </div>
               )}
 
-              {currentTab === 'materials' && (
-                <div className="space-y-4">
-                  <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Materi Pembelajaran</h1>
-                  {DEMO_MATERIALS.map(m => (
-                    <div key={m.id} className="glass-panel rounded-3xl p-6 border border-white/10 space-y-3">
-                      <h3 className="text-base font-bold text-white">{m.title}</h3>
-                      <div className="text-xs text-slate-300 leading-relaxed font-mono">
-                        <MathText text={m.content} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {currentTab === 'materials' && <StudentMaterialsPage />}
 
               {currentTab === 'results' && (
                 <div className="space-y-4">
@@ -242,7 +220,9 @@ export const App: React.FC = () => {
   return (
     <AuthProvider>
       <ClassProvider>
-        <MainAppContent />
+        <MaterialProvider>
+          <MainAppContent />
+        </MaterialProvider>
       </ClassProvider>
     </AuthProvider>
   );

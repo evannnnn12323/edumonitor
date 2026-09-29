@@ -40,6 +40,9 @@ export interface Material {
   title: string;
   content: string;
   fileUrl?: string;
+  fileName?: string;
+  fileSize?: string;
+  fileType?: string;
   createdAt: string;
   teacherId: string;
 }
