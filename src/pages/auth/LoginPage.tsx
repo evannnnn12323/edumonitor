@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth, DEFAULT_TEACHER_PASSWORD } from '../../context/AuthContext';
-import { ShieldCheck, UserCheck, GraduationCap, Lock, LogIn, AlertCircle, Sparkles } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { ShieldCheck, UserCheck, GraduationCap, Lock, LogIn, AlertCircle } from 'lucide-react';
 import { UserRole } from '../../types';
 
 interface LoginPageProps {
@@ -29,7 +29,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
     const success = loginAsTeacher(teacherName, teacherPassword);
     if (!success) {
-      setTeacherError(`Password Guru salah! (Default: ${DEFAULT_TEACHER_PASSWORD})`);
+      setTeacherError('Password Guru yang Anda masukkan salah!');
       return;
     }
     onLoginSuccess();
@@ -114,7 +114,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </form>
         )}
 
-        {/* PORTAL GURU FORM (With Password Protection) */}
+        {/* PORTAL GURU FORM (With Password Protection, No Hints) */}
         {activePortal === 'TEACHER' && (
           <form onSubmit={handleTeacherLogin} className="glass-panel rounded-3xl p-6 border border-blue-500/30 space-y-4 shadow-2xl animate-in fade-in">
             <div className="text-center border-b border-white/10 pb-3">
@@ -155,10 +155,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   required
                   className="w-full rounded-xl bg-slate-900 border border-white/15 pl-10 pr-4 py-3 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
                 />
-              </div>
-              <div className="mt-1 flex items-center space-x-1 text-[11px] text-slate-400">
-                <Sparkles className="h-3 w-3 text-amber-400" />
-                <span>Password Bawaan: <code className="text-blue-400 font-bold">{DEFAULT_TEACHER_PASSWORD}</code></span>
               </div>
             </div>
 

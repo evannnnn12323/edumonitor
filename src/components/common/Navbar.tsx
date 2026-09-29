@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth, DEFAULT_TEACHER_PASSWORD } from '../../context/AuthContext';
-import { ShieldCheck, UserCheck, LogOut, Edit3, X, Save, Lock, AlertCircle, Sparkles } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { ShieldCheck, UserCheck, LogOut, Edit3, X, Save, Lock, AlertCircle } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { currentUser, loginAsTeacher, loginAsStudent, updateProfile, verifyTeacherPassword, logout } = useAuth();
@@ -33,7 +33,7 @@ export const Navbar: React.FC = () => {
     e.preventDefault();
     setPassError('');
     if (!verifyTeacherPassword(inputPassword)) {
-      setPassError(`Password Guru salah! (Default: ${DEFAULT_TEACHER_PASSWORD})`);
+      setPassError('Password Guru yang Anda masukkan salah!');
       return;
     }
     loginAsTeacher('Guru', inputPassword);
@@ -230,14 +230,10 @@ export const Navbar: React.FC = () => {
                 type="password"
                 value={inputPassword}
                 onChange={(e) => setInputPassword(e.target.value)}
-                placeholder="Password pengawas..."
+                placeholder="Masukkan password pengawas..."
                 required
                 className="w-full rounded-xl bg-slate-900 border border-white/15 p-3 text-xs text-white focus:border-blue-500 focus:outline-none"
               />
-              <div className="mt-1 flex items-center space-x-1 text-[11px] text-slate-400">
-                <Sparkles className="h-3 w-3 text-amber-400" />
-                <span>Password Bawaan: <code className="text-blue-400 font-bold">{DEFAULT_TEACHER_PASSWORD}</code></span>
-              </div>
             </div>
 
             <div className="flex justify-end space-x-3 pt-2">
