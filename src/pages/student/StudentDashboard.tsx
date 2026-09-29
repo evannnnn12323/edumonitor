@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { DEMO_CLASSES, DEMO_EXAM } from '../../lib/demoData';
+import { DEMO_EXAM } from '../../lib/demoData';
 import { useAuth } from '../../context/AuthContext';
-import { BookOpen, ClipboardList, Award, Plus, CheckCircle2, ChevronRight, Play } from 'lucide-react';
+import { useClasses } from '../../context/ClassContext';
+import { BookOpen, ClipboardList, Award, Plus, CheckCircle2, ChevronRight, Play, AlertCircle } from 'lucide-react';
 
 interface StudentDashboardProps {
   onStartExam: (examId: string) => void;
@@ -10,16 +11,29 @@ interface StudentDashboardProps {
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam, onNavigate }) => {
   const { currentUser } = useAuth();
+  const { getJoinedClasses, joinClassByCode } = useClasses();
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [classCode, setClassCode] = useState('');
-  const [joinedClasses, setJoinedClasses] = useState(DEMO_CLASSES);
+  const [joinMessage, setJoinMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const joinedClasses = getJoinedClasses();
 
   const handleJoinClass = (e: React.FormEvent) => {
     e.preventDefault();
+    setJoinMessage(null);
     if (!classCode.trim()) return;
-    alert(`Berhasil bergabung ke kelas dengan kode: ${classCode.toUpperCase()}`);
-    setShowJoinModal(false);
-    setClassCode('');
+
+    const result = joinClassByCode(classCode);
+    if (result.success) {
+      setJoinMessage({ type: 'success', text: result.message });
+      setTimeout(() => {
+        setShowJoinModal(false);
+        setClassCode('');
+        setJoinMessage(null);
+      }, 1500);
+    } else {
+      setJoinMessage({ type: 'error', text: result.message });
+    }
   };
 
   return (
@@ -37,7 +51,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
           </div>
 
           <button
-            onClick={() => setShowJoinModal(true)}
+            onClick={() => {
+              setJoinMessage(null);
+              setShowJoinModal(true);
+            }}
             className="flex items-center space-x-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500 transition"
           >
             <Plus className="h-4 w-4" />
@@ -73,22 +90,40 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
       {/* My Classes Grid */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Kelas Terdaftar</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Kelas Terdaftar ({joinedClasses.length})</h3>
           <button onClick={() => onNavigate('classes')} className="text-xs text-blue-400 hover:underline">Lihat Semua</button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {joinedClasses.map(c => (
-            <div key={c.id} className="glass-panel rounded-2xl p-5 border border-white/10 space-y-2">
-              <div className="text-xs font-bold text-white">{c.name}</div>
-              <div className="text-[11px] text-slate-400">{c.teacherName}</div>
-              <div className="pt-2 flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5">
-                <span>Kode: <strong className="text-blue-400">{c.code}</strong></span>
-                <span className="text-emerald-400 font-semibold">Aktif</span>
+        {joinedClasses.length === 0 ? (
+          <div className="glass-panel rounded-2xl p-6 text-center border border-white/10 space-y-2">
+            <p className="text-xs text-slate-400">Anda belum bergabung ke kelas manapun.</p>
+            <button
+              onClick={() => {
+                setJoinMessage(null);
+                setShowJoinModal(true);
+              }}
+              className="text-xs text-blue-400 font-bold hover:underline"
+            >
+              + Gabung Kelas Sekarang
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {joinedClasses.map(c => (
+              <div key={c.id} className="glass-panel rounded-2xl p-5 border border-white/10 space-y-2">
+                <div className="text-xs font-bold text-white">{c.name}</div>
+                <div className="text-[11px] text-slate-400">Pengajar: {c.teacherName}</div>
+                <div className="pt-2 flex justify-between items-center text-[10px] text-slate-400 border-t border-white/5">
+                  <span>Kode: <strong className="text-blue-400 font-mono">{c.code}</strong></span>
+                  <span className="text-emerald-400 font-semibold flex items-center space-x-1">
+                    <CheckCircle2 className="h-3 w-3 inline" />
+                    <span>Terdaftar</span>
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Join Class Modal */}
@@ -97,6 +132,22 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
           <form onSubmit={handleJoinClass} className="w-full max-w-md rounded-2xl glass-panel p-6 border border-white/10 shadow-2xl space-y-4">
             <h3 className="text-sm font-bold text-white">Gabung Kelas Dengan Kode</h3>
             <p className="text-xs text-slate-400">Masukkan kode kelas dari guru Anda (Contoh: MTK-XA-4827)</p>
+            
+            {joinMessage && (
+              <div className={`p-3 rounded-xl border text-xs flex items-center space-x-2 ${
+                joinMessage.type === 'success'
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                  : 'bg-red-500/20 border-red-500/40 text-red-300'
+              }`}>
+                {joinMessage.type === 'success' ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                )}
+                <span>{joinMessage.text}</span>
+              </div>
+            )}
+
             <input
               type="text"
               value={classCode}
@@ -109,7 +160,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
               <button type="button" onClick={() => setShowJoinModal(false)} className="rounded-xl px-4 py-2 text-xs text-slate-400">
                 Batal
               </button>
-              <button type="submit" className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-lg">
+              <button type="submit" className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-500">
                 Gabung Kelas
               </button>
             </div>
@@ -120,3 +171,4 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
     </div>
   );
 };
+

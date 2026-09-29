@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ClassItem } from '../../types';
-import { DEMO_CLASSES, DEMO_USERS } from '../../lib/demoData';
-import { Users, Plus, Copy, Check, Trash2, Key } from 'lucide-react';
+import { useClasses } from '../../context/ClassContext';
+import { useAuth } from '../../context/AuthContext';
+import { DEMO_USERS } from '../../lib/demoData';
+import { Users, Plus, Copy, Check, Trash2 } from 'lucide-react';
 
 export const TeacherClassesPage: React.FC = () => {
-  const [classes, setClasses] = useState<ClassItem[]>(DEMO_CLASSES);
+  const { classes, addClass, deleteClass } = useClasses();
+  const { currentUser } = useAuth();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
@@ -19,19 +21,14 @@ export const TeacherClassesPage: React.FC = () => {
 
   const handleCreateClass = (e: React.FormEvent) => {
     e.preventDefault();
-    const randomCode = `${subject.substring(0, 3).toUpperCase()}-${grade}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newClass: ClassItem = {
-      id: `class_${Date.now()}`,
+    if (!name.trim()) return;
+    addClass(
       name,
       subject,
       grade,
-      code: randomCode,
-      teacherId: 'user_teacher_1',
-      teacherName: 'Pak Andi Wijaya, S.Pd.',
-      createdAt: new Date().toISOString(),
-      studentCount: 0
-    };
-    setClasses([...classes, newClass]);
+      currentUser?.name || 'Guru',
+      currentUser?.id || 'user_teacher_1'
+    );
     setShowModal(false);
     setName('');
   };
@@ -53,44 +50,70 @@ export const TeacherClassesPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {classes.map(c => (
-          <div key={c.id} className="glass-panel rounded-3xl p-6 border border-white/10 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-white">{c.name}</h3>
-                <p className="text-xs text-slate-400">{c.subject} • Kelas {c.grade}</p>
+      {classes.length === 0 ? (
+        <div className="glass-panel rounded-3xl p-12 text-center border border-white/10 space-y-3">
+          <p className="text-sm text-slate-400">Belum ada kelas yang dibuat.</p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500"
+          >
+            + Buat Kelas Pertama
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {classes.map(c => (
+            <div key={c.id} className="glass-panel rounded-3xl p-6 border border-white/10 space-y-4 shadow-xl relative group">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white">{c.name}</h3>
+                  <p className="text-xs text-slate-400">{c.subject} • Kelas {c.grade}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Pengajar: {c.teacherName}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-bold text-blue-300 ring-1 ring-blue-500/30">
+                    {c.studentCount || 0} Siswa
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Apakah Anda yakin ingin menghapus kelas "${c.name}"?`)) {
+                        deleteClass(c.id);
+                      }
+                    }}
+                    title="Hapus Kelas"
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-bold text-blue-300 ring-1 ring-blue-500/30">
-                {c.studentCount} Siswa
-              </span>
-            </div>
 
-            <div className="rounded-2xl bg-slate-900/80 p-4 border border-white/10 flex items-center justify-between">
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-400">Kode Gabung Siswa:</div>
-                <div className="text-base font-extrabold text-blue-400 tracking-wider font-mono">{c.code}</div>
+              <div className="rounded-2xl bg-slate-900/80 p-4 border border-white/10 flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400">Kode Gabung Siswa:</div>
+                  <div className="text-base font-extrabold text-blue-400 tracking-wider font-mono">{c.code}</div>
+                </div>
+                <button
+                  onClick={() => handleCopyCode(c.code)}
+                  className="flex items-center space-x-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 px-3 py-1.5 text-xs font-semibold text-blue-300 hover:bg-blue-600/30"
+                >
+                  {copiedCode === c.code ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span>{copiedCode === c.code ? 'Tercopy!' : 'Salin Kode'}</span>
+                </button>
               </div>
-              <button
-                onClick={() => handleCopyCode(c.code)}
-                className="flex items-center space-x-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 px-3 py-1.5 text-xs font-semibold text-blue-300 hover:bg-blue-600/30"
-              >
-                {copiedCode === c.code ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                <span>{copiedCode === c.code ? 'Tercopy!' : 'Salin Kode'}</span>
-              </button>
-            </div>
 
-            <div className="pt-2 border-t border-white/5 flex justify-between items-center text-xs">
-              <span className="text-slate-400">Daftar Siswa Terverifikasi:</span>
-              <div className="flex -space-x-2">
-                {DEMO_USERS.slice(1).map(u => (
-                  <img key={u.id} src={u.avatarUrl} alt={u.name} title={u.name} className="h-7 w-7 rounded-full border-2 border-slate-900 object-cover" />
-                ))}
+              <div className="pt-2 border-t border-white/5 flex justify-between items-center text-xs">
+                <span className="text-slate-400">Daftar Siswa Terverifikasi:</span>
+                <div className="flex -space-x-2">
+                  {DEMO_USERS.slice(1).map(u => (
+                    <img key={u.id} src={u.avatarUrl} alt={u.name} title={u.name} className="h-7 w-7 rounded-full border-2 border-slate-900 object-cover" />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
@@ -104,7 +127,7 @@ export const TeacherClassesPage: React.FC = () => {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Contoh: Matematika Kelas X A"
                 required
-                className="w-full rounded-xl bg-slate-900 border border-white/10 p-3 text-xs text-white"
+                className="w-full rounded-xl bg-slate-900 border border-white/10 p-3 text-xs text-white focus:border-blue-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -131,7 +154,7 @@ export const TeacherClassesPage: React.FC = () => {
               <button type="button" onClick={() => setShowModal(false)} className="rounded-xl px-4 py-2 text-xs text-slate-400">
                 Batal
               </button>
-              <button type="submit" className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-lg">
+              <button type="submit" className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-500">
                 Buat Kelas
               </button>
             </div>
@@ -142,3 +165,4 @@ export const TeacherClassesPage: React.FC = () => {
     </div>
   );
 };
+

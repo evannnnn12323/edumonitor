@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { DEMO_CLASSES, DEMO_EXAM, DEMO_USERS } from '../../lib/demoData';
+import { useClasses } from '../../context/ClassContext';
+import { DEMO_EXAM, DEMO_USERS } from '../../lib/demoData';
 import { LayoutDashboard, Users, ClipboardList, Eye, ShieldAlert, TrendingUp, Award, Clock } from 'lucide-react';
 
 interface TeacherDashboardProps {
@@ -9,6 +10,7 @@ interface TeacherDashboardProps {
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onNavigate }) => {
   const { currentUser } = useAuth();
+  const { classes } = useClasses();
 
   return (
     <div className="space-y-6">
@@ -48,7 +50,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onNavigate }
             <span className="text-xs font-semibold text-slate-400">Total Kelas</span>
             <Users className="h-5 w-5 text-blue-400" />
           </div>
-          <div className="mt-3 text-2xl font-extrabold text-white">1 <span className="text-xs text-slate-500 font-normal">kelas</span></div>
+          <div className="mt-3 text-2xl font-extrabold text-white">{classes.length} <span className="text-xs text-slate-500 font-normal">kelas</span></div>
         </div>
         <div className="glass-panel rounded-2xl p-5 border border-white/10">
           <div className="flex items-center justify-between">
@@ -76,19 +78,26 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onNavigate }
       {/* Recent Class & Exam Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-panel rounded-3xl p-6 border border-white/10">
-          <h3 className="text-sm font-bold text-white mb-4">Kelas Saya</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-white">Kelas Saya</h3>
+            <button onClick={() => onNavigate('classes')} className="text-xs text-blue-400 hover:underline">Kelola Kelas</button>
+          </div>
           <div className="space-y-3">
-            {DEMO_CLASSES.map(c => (
-              <div key={c.id} className="rounded-2xl bg-slate-900/60 p-4 border border-white/5 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-white">{c.name}</div>
-                  <div className="text-[10px] text-slate-400">Kode: <code className="text-blue-400 font-bold">{c.code}</code></div>
+            {classes.length === 0 ? (
+              <p className="text-xs text-slate-400">Belum ada kelas.</p>
+            ) : (
+              classes.map(c => (
+                <div key={c.id} className="rounded-2xl bg-slate-900/60 p-4 border border-white/5 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-white">{c.name}</div>
+                    <div className="text-[10px] text-slate-400">Kode: <code className="text-blue-400 font-bold font-mono">{c.code}</code></div>
+                  </div>
+                  <button onClick={() => onNavigate('classes')} className="rounded-xl bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-300 hover:bg-blue-600/30">
+                    Lihat ({c.studentCount || 0} Siswa)
+                  </button>
                 </div>
-                <button onClick={() => onNavigate('classes')} className="rounded-xl bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-xs font-semibold text-blue-300">
-                  Lihat Siswa ({c.studentCount})
-                </button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

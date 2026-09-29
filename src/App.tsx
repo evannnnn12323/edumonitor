@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ClassProvider, useClasses } from './context/ClassContext';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -14,10 +15,11 @@ import { StudentDashboard } from './pages/student/StudentDashboard';
 import { TakeExamPage } from './pages/student/TakeExamPage';
 import { DEMO_MATERIALS, DEMO_EXAM, DEMO_USERS } from './lib/demoData';
 import { MathText } from './components/common/MathText';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
   const { currentUser } = useAuth();
+  const { getJoinedClasses } = useClasses();
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [isTakingExam, setIsTakingExam] = useState(false);
   const [isCreatingExam, setIsCreatingExam] = useState(false);
@@ -25,6 +27,8 @@ const MainAppContent: React.FC = () => {
   if (!currentUser) {
     return <LoginPage onLoginSuccess={() => setCurrentTab('dashboard')} />;
   }
+
+  const studentJoinedClasses = getJoinedClasses();
 
   // Fullscreen view for student taking exam
   if (isTakingExam && currentUser.role === 'STUDENT') {
@@ -167,11 +171,32 @@ const MainAppContent: React.FC = () => {
 
               {currentTab === 'classes' && (
                 <div className="space-y-4">
-                  <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Kelas Saya</h1>
-                  <div className="glass-panel rounded-3xl p-6 border border-white/10">
-                    <h3 className="text-base font-bold text-white">Matematika Kelas X A</h3>
-                    <p className="text-xs text-slate-400">Guru: {currentUser?.name || 'Guru'} • Kode: <code className="text-blue-400 font-bold">MTK-XA-4827</code></p>
-                  </div>
+                  <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Kelas Saya ({studentJoinedClasses.length})</h1>
+                  {studentJoinedClasses.length === 0 ? (
+                    <div className="glass-panel rounded-3xl p-8 text-center border border-white/10">
+                      <p className="text-sm text-slate-400">Anda belum terdaftar di kelas manapun.</p>
+                      <button
+                        onClick={() => setCurrentTab('dashboard')}
+                        className="mt-3 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-lg hover:bg-blue-500"
+                      >
+                        Kembali ke Dashboard untuk Gabung Kelas
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {studentJoinedClasses.map(c => (
+                        <div key={c.id} className="glass-panel rounded-3xl p-6 border border-white/10 space-y-2">
+                          <h3 className="text-base font-bold text-white">{c.name}</h3>
+                          <p className="text-xs text-slate-400">{c.subject} • Kelas {c.grade}</p>
+                          <p className="text-xs text-slate-400">Pengajar: <strong className="text-slate-200">{c.teacherName}</strong> • Kode: <code className="text-blue-400 font-bold font-mono">{c.code}</code></p>
+                          <div className="pt-2 flex items-center space-x-1 text-xs text-emerald-400 font-medium">
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>Status: Terdaftar & Aktif</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -216,9 +241,12 @@ const MainAppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <AuthProvider>
-      <MainAppContent />
+      <ClassProvider>
+        <MainAppContent />
+      </ClassProvider>
     </AuthProvider>
   );
 };
 
 export default App;
+
