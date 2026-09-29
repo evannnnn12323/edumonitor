@@ -4,11 +4,16 @@ import { User, UserRole } from '../types';
 interface AuthContextType {
   currentUser: User | null;
   role: UserRole | null;
-  login: (name: string, role: UserRole, email?: string) => void;
+  loginAsTeacher: (name: string, password: string) => boolean;
+  loginAsStudent: (name: string) => void;
   updateProfile: (name: string, schoolName?: string) => void;
+  verifyTeacherPassword: (password: string) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
 }
+
+// Default system PIN/Password for Teacher Access
+export const DEFAULT_TEACHER_PASSWORD = "guru123";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -18,16 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    // Fresh default user (Guru by default, editable)
-    return {
-      id: 'user_teacher_1',
-      name: 'Guru', // Clean default, editable anytime
-      email: 'guru@sekolah.sch.id',
-      role: 'TEACHER',
-      schoolName: 'Sekolah EduMonitor',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      createdAt: new Date().toISOString()
-    };
+    return null; // Fresh start: User lands on Login Portal selection screen first
   });
 
   useEffect(() => {
@@ -38,16 +34,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
-  const login = (name: string, role: UserRole, email?: string) => {
+  const verifyTeacherPassword = (password: string): boolean => {
+    const customPass = localStorage.getItem('edumonitor_teacher_password') || DEFAULT_TEACHER_PASSWORD;
+    return password.trim() === customPass.trim();
+  };
+
+  const loginAsTeacher = (name: string, password: string): boolean => {
+    if (!verifyTeacherPassword(password)) {
+      return false;
+    }
     const newUser: User = {
-      id: `user_${Date.now()}`,
-      name: name || (role === 'TEACHER' ? 'Guru' : 'Siswa'),
-      email: email || `${role.toLowerCase()}@sekolah.sch.id`,
-      role,
+      id: `user_teacher_${Date.now()}`,
+      name: name.trim() || 'Guru',
+      email: 'guru@sekolah.sch.id',
+      role: 'TEACHER',
       schoolName: 'Sekolah EduMonitor',
-      avatarUrl: role === 'TEACHER' 
-        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
-        : 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      createdAt: new Date().toISOString()
+    };
+    setCurrentUser(newUser);
+    return true;
+  };
+
+  const loginAsStudent = (name: string) => {
+    const newUser: User = {
+      id: `user_student_${Date.now()}`,
+      name: name.trim() || 'Siswa',
+      email: 'siswa@sekolah.sch.id',
+      role: 'STUDENT',
+      schoolName: 'Sekolah EduMonitor',
+      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       createdAt: new Date().toISOString()
     };
     setCurrentUser(newUser);
@@ -72,8 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         currentUser,
         role: currentUser?.role || null,
-        login,
+        loginAsTeacher,
+        loginAsStudent,
         updateProfile,
+        verifyTeacherPassword,
         logout,
         isAuthenticated: !!currentUser
       }}

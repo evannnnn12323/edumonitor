@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, UserCheck, LogOut, Edit3, X, Save, School, Sparkles } from 'lucide-react';
+import { useAuth, DEFAULT_TEACHER_PASSWORD } from '../../context/AuthContext';
+import { ShieldCheck, UserCheck, LogOut, Edit3, X, Save, Lock, AlertCircle, Sparkles } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { currentUser, login, updateProfile, logout } = useAuth();
+  const { currentUser, loginAsTeacher, loginAsStudent, updateProfile, verifyTeacherPassword, logout } = useAuth();
+  
+  // Edit Profile Name State
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(currentUser?.name || '');
   const [editSchool, setEditSchool] = useState(currentUser?.schoolName || '');
+
+  // Teacher Password Protection Modal State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [inputPassword, setInputPassword] = useState('');
+  const [passError, setPassError] = useState('');
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,12 +22,27 @@ export const Navbar: React.FC = () => {
     setIsEditingName(false);
   };
 
-  const handleSwitchRole = (role: 'TEACHER' | 'STUDENT') => {
-    if (role === 'TEACHER') {
-      login('Guru', 'TEACHER');
-    } else {
-      login('Siswa', 'STUDENT');
+  const handleSwitchToTeacher = () => {
+    if (currentUser?.role === 'TEACHER') return;
+    setIsPasswordModalOpen(true);
+    setPassError('');
+    setInputPassword('');
+  };
+
+  const handleConfirmTeacherPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError('');
+    if (!verifyTeacherPassword(inputPassword)) {
+      setPassError(`Password Guru salah! (Default: ${DEFAULT_TEACHER_PASSWORD})`);
+      return;
     }
+    loginAsTeacher('Guru', inputPassword);
+    setIsPasswordModalOpen(false);
+  };
+
+  const handleSwitchToStudent = () => {
+    if (currentUser?.role === 'STUDENT') return;
+    loginAsStudent('Siswa');
   };
 
   return (
@@ -46,23 +68,24 @@ export const Navbar: React.FC = () => {
         {/* Right Section: Role Switcher & Edit Name */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           
-          {/* Role Selector Button */}
+          {/* Protected Role Selector Buttons */}
           <div className="flex items-center rounded-xl bg-slate-950 p-1 border border-white/10 text-xs">
             <button
-              onClick={() => handleSwitchRole('TEACHER')}
-              className={`rounded-lg px-2.5 py-1 font-semibold transition ${
+              onClick={handleSwitchToTeacher}
+              className={`flex items-center space-x-1 rounded-lg px-2.5 py-1 font-semibold transition ${
                 currentUser?.role === 'TEACHER' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Mode Guru
+              <Lock className="h-3 w-3" />
+              <span>Portal Guru</span>
             </button>
             <button
-              onClick={() => handleSwitchRole('STUDENT')}
+              onClick={handleSwitchToStudent}
               className={`rounded-lg px-2.5 py-1 font-semibold transition ${
                 currentUser?.role === 'STUDENT' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Mode Siswa
+              Portal Siswa
             </button>
           </div>
 
@@ -174,6 +197,62 @@ export const Navbar: React.FC = () => {
               >
                 <Save className="h-3.5 w-3.5" />
                 <span>Simpan Nama</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Teacher Password Verification Modal */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+          <form onSubmit={handleConfirmTeacherPassword} className="w-full max-w-md rounded-2xl glass-panel p-6 border border-blue-500/30 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center space-x-2 text-sm font-bold text-white">
+                <Lock className="h-4 w-4 text-blue-400" />
+                <span>Verifikasi Password Guru</span>
+              </div>
+              <button type="button" onClick={() => setIsPasswordModalOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-white/10">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {passError && (
+              <div className="rounded-xl bg-red-500/20 border border-red-500/40 p-3 text-xs text-red-300 flex items-center space-x-2">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                <span>{passError}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Masukkan Password Guru:</label>
+              <input
+                type="password"
+                value={inputPassword}
+                onChange={(e) => setInputPassword(e.target.value)}
+                placeholder="Password pengawas..."
+                required
+                className="w-full rounded-xl bg-slate-900 border border-white/15 p-3 text-xs text-white focus:border-blue-500 focus:outline-none"
+              />
+              <div className="mt-1 flex items-center space-x-1 text-[11px] text-slate-400">
+                <Sparkles className="h-3 w-3 text-amber-400" />
+                <span>Password Bawaan: <code className="text-blue-400 font-bold">{DEFAULT_TEACHER_PASSWORD}</code></span>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="rounded-xl px-4 py-2 text-xs font-medium text-slate-400 hover:bg-white/10"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex items-center space-x-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500"
+              >
+                <span>Masuk Mode Guru</span>
               </button>
             </div>
           </form>
