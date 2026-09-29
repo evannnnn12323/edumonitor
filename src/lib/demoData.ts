@@ -3,32 +3,32 @@ import { User, ClassItem, QuestionBank, Question, Exam, ExamAttempt, Material } 
 export const DEMO_USERS: User[] = [
   {
     id: 'user_teacher_1',
-    name: 'Pak Andi Wijaya, S.Pd.',
-    email: 'guru.demo@edumonitor.local',
+    name: 'Guru',
+    email: '',
     role: 'TEACHER',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     createdAt: '2026-01-10T08:00:00Z'
   },
   {
     id: 'user_student_1',
-    name: 'Budi Santoso',
-    email: 'siswa.demo@edumonitor.local',
+    name: 'Siswa 1',
+    email: '',
     role: 'STUDENT',
     avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
     createdAt: '2026-01-12T09:00:00Z'
   },
   {
     id: 'user_student_2',
-    name: 'Siti Rahma',
-    email: 'siswa2.demo@edumonitor.local',
+    name: 'Siswa 2',
+    email: '',
     role: 'STUDENT',
     avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
     createdAt: '2026-01-12T09:15:00Z'
   },
   {
     id: 'user_student_3',
-    name: 'Andi Pratama',
-    email: 'siswa3.demo@edumonitor.local',
+    name: 'Siswa 3',
+    email: '',
     role: 'STUDENT',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
     createdAt: '2026-01-12T09:30:00Z'
@@ -43,7 +43,7 @@ export const DEMO_CLASSES: ClassItem[] = [
     grade: 'X',
     code: 'MTK-XA-4827',
     teacherId: 'user_teacher_1',
-    teacherName: 'Pak Andi Wijaya, S.Pd.',
+    teacherName: 'Guru',
     description: 'Kelas pembelajaran Matematika pematan, aljabar, dan fungsi untuk kelas X A.',
     createdAt: '2026-01-15T07:30:00Z',
     studentCount: 3
