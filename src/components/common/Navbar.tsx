@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { DEMO_USERS } from '../../lib/demoData';
-import { ShieldCheck, UserCheck, LogOut, Sparkles, ChevronDown, Bell } from 'lucide-react';
+import { ShieldCheck, UserCheck, LogOut, Edit3, X, Save, School, Sparkles } from 'lucide-react';
 
-interface NavbarProps {
-  activeTab?: string;
-  setActiveTab?: (tab: string) => void;
-}
+export const Navbar: React.FC = () => {
+  const { currentUser, login, updateProfile, logout } = useAuth();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(currentUser?.name || '');
+  const [editSchool, setEditSchool] = useState(currentUser?.schoolName || '');
 
-export const Navbar: React.FC<NavbarProps> = () => {
-  const { currentUser, loginAsDemo, logout } = useAuth();
-  const [showDemoDropdown, setShowDemoDropdown] = useState(false);
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    updateProfile(editName, editSchool);
+    setIsEditingName(false);
+  };
+
+  const handleSwitchRole = (role: 'TEACHER' | 'STUDENT') => {
+    if (role === 'TEACHER') {
+      login('Guru', 'TEACHER');
+    } else {
+      login('Siswa', 'STUDENT');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-slate-900/80 backdrop-blur-md">
@@ -32,57 +43,30 @@ export const Navbar: React.FC<NavbarProps> = () => {
           </div>
         </div>
 
-        {/* Right Section: Demo Quick Switcher & User Profile */}
+        {/* Right Section: Role Switcher & Edit Name */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           
-          {/* Quick Switch Demo Account Dropdown */}
-          <div className="relative">
+          {/* Role Selector Button */}
+          <div className="flex items-center rounded-xl bg-slate-950 p-1 border border-white/10 text-xs">
             <button
-              onClick={() => setShowDemoDropdown(!showDemoDropdown)}
-              className="flex items-center space-x-2 rounded-lg bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300 ring-1 ring-indigo-500/30 transition hover:bg-indigo-500/20"
-              title="Ganti Akun Demo Pengujian Realtime"
+              onClick={() => handleSwitchRole('TEACHER')}
+              className={`rounded-lg px-2.5 py-1 font-semibold transition ${
+                currentUser?.role === 'TEACHER' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
             >
-              <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-              <span className="hidden sm:inline">Ganti Akun Demo</span>
-              <ChevronDown className="h-3.5 w-3.5" />
+              Mode Guru
             </button>
-
-            {showDemoDropdown && (
-              <div className="glass-panel absolute right-0 mt-2 w-64 rounded-xl p-2 shadow-2xl ring-1 ring-white/10">
-                <div className="px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-                  Pilih Akun Demo (Uji 2 Browser):
-                </div>
-                <div className="space-y-1">
-                  {DEMO_USERS.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => {
-                        loginAsDemo(u.email);
-                        setShowDemoDropdown(false);
-                      }}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition ${
-                        currentUser?.email === u.email
-                          ? 'bg-blue-600/30 font-semibold text-blue-300 ring-1 ring-blue-500/40'
-                          : 'text-slate-300 hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="truncate">
-                        <div className="font-medium text-white">{u.name}</div>
-                        <div className="text-[10px] text-slate-400">{u.email}</div>
-                      </div>
-                      <span className={`ml-2 rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                        u.role === 'TEACHER' ? 'bg-purple-500/20 text-purple-300' : 'bg-emerald-500/20 text-emerald-300'
-                      }`}>
-                        {u.role === 'TEACHER' ? 'GURU' : 'SISWA'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <button
+              onClick={() => handleSwitchRole('STUDENT')}
+              className={`rounded-lg px-2.5 py-1 font-semibold transition ${
+                currentUser?.role === 'STUDENT' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Mode Siswa
+            </button>
           </div>
 
-          {/* Current User Info */}
+          {/* Current User Info & Edit Name Trigger */}
           {currentUser && (
             <div className="flex items-center space-x-3 border-l border-white/10 pl-3 sm:pl-4">
               <img
@@ -91,7 +75,20 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 className="h-8 w-8 rounded-full object-cover ring-2 ring-blue-500/50"
               />
               <div className="hidden text-left sm:block">
-                <div className="text-xs font-semibold text-white">{currentUser.name}</div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-xs font-bold text-white">{currentUser.name}</span>
+                  <button
+                    onClick={() => {
+                      setEditName(currentUser.name);
+                      setEditSchool(currentUser.schoolName || '');
+                      setIsEditingName(true);
+                    }}
+                    className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-blue-400 transition"
+                    title="Edit Nama Pengguna"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                  </button>
+                </div>
                 <div className="flex items-center space-x-1">
                   <UserCheck className="h-3 w-3 text-emerald-400" />
                   <span className="text-[10px] font-semibold text-emerald-400">
@@ -99,6 +96,19 @@ export const Navbar: React.FC<NavbarProps> = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Edit Name Button for Mobile */}
+              <button
+                onClick={() => {
+                  setEditName(currentUser.name);
+                  setEditSchool(currentUser.schoolName || '');
+                  setIsEditingName(true);
+                }}
+                className="sm:hidden rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-blue-400"
+                title="Edit Nama"
+              >
+                <Edit3 className="h-4 w-4" />
+              </button>
 
               {/* Logout */}
               <button
@@ -112,6 +122,64 @@ export const Navbar: React.FC<NavbarProps> = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Name Modal */}
+      {isEditingName && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in">
+          <form onSubmit={handleSaveProfile} className="w-full max-w-md rounded-2xl glass-panel p-6 border border-white/10 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center space-x-2 text-sm font-bold text-white">
+                <Edit3 className="h-4 w-4 text-blue-400" />
+                <span>Edit Nama Pengguna / Guru</span>
+              </div>
+              <button type="button" onClick={() => setIsEditingName(false)} className="rounded-lg p-1 text-slate-400 hover:bg-white/10">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Nama Lengkap Guru / Pengguna:</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Ketik nama Anda di sini..."
+                required
+                className="w-full rounded-xl bg-slate-900 border border-white/15 p-3 text-xs text-white focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Nama Sekolah / Instansi:</label>
+              <input
+                type="text"
+                value={editSchool}
+                onChange={(e) => setEditSchool(e.target.value)}
+                placeholder="Contoh: SMA Negeri 1 Indonesia"
+                className="w-full rounded-xl bg-slate-900 border border-white/15 p-3 text-xs text-white focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditingName(false)}
+                className="rounded-xl px-4 py-2 text-xs font-medium text-slate-400 hover:bg-white/10"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="flex items-center space-x-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>Simpan Nama</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
     </header>
   );
 };

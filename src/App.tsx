@@ -9,11 +9,12 @@ import { QuestionBankPage } from './pages/teacher/QuestionBankPage';
 import { ExamCreatePage } from './pages/teacher/ExamCreatePage';
 import { ExamResultPage } from './pages/teacher/ExamResultPage';
 import { TeacherClassesPage } from './pages/teacher/TeacherClassesPage';
+import { TeacherSettingsPage } from './pages/teacher/TeacherSettingsPage';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { TakeExamPage } from './pages/student/TakeExamPage';
 import { DEMO_MATERIALS, DEMO_EXAM, DEMO_USERS } from './lib/demoData';
 import { MathText } from './components/common/MathText';
-import { BookOpen, ClipboardList, ShieldAlert, Award, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
   const { currentUser } = useAuth();
@@ -54,6 +55,7 @@ const MainAppContent: React.FC = () => {
               {currentTab === 'monitoring' && <LiveMonitoringPage />}
               {currentTab === 'question-bank' && <QuestionBankPage />}
               {currentTab === 'results' && <ExamResultPage />}
+              {currentTab === 'settings' && <TeacherSettingsPage />}
 
               {currentTab === 'exams' && (
                 <div className="space-y-4">
@@ -131,20 +133,6 @@ const MainAppContent: React.FC = () => {
                   </div>
                 </div>
               )}
-
-              {currentTab === 'settings' && (
-                <div className="space-y-6 max-w-2xl">
-                  <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Pengaturan Sistem Proctoring</h1>
-                  <div className="glass-panel rounded-3xl p-6 border border-white/10 space-y-4 text-xs">
-                    <h3 className="font-bold text-white">Batas Peringatan Otomatis (Auto Alert):</h3>
-                    <div className="space-y-2 text-slate-300">
-                      <div>Pindah tab 1 kali: <span className="text-slate-400">Catat log di timeline</span></div>
-                      <div>Pindah tab 3 kali: <span className="text-amber-400 font-bold">Tampilkan Toast Notification ke Guru</span></div>
-                      <div>Pindah tab 5 kali: <span className="text-red-400 font-bold">Tandai status "Perlu Diperiksa" (High Risk)</span></div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
 
@@ -182,7 +170,7 @@ const MainAppContent: React.FC = () => {
                   <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Kelas Saya</h1>
                   <div className="glass-panel rounded-3xl p-6 border border-white/10">
                     <h3 className="text-base font-bold text-white">Matematika Kelas X A</h3>
-                    <p className="text-xs text-slate-400">Guru: Pak Andi Wijaya, S.Pd. • Kode: <code className="text-blue-400 font-bold">MTK-XA-4827</code></p>
+                    <p className="text-xs text-slate-400">Guru: {currentUser?.name || 'Guru'} • Kode: <code className="text-blue-400 font-bold">MTK-XA-4827</code></p>
                   </div>
                 </div>
               )}

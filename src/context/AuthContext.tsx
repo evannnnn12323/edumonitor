@@ -1,14 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
-import { DEMO_USERS } from '../lib/demoData';
 
 interface AuthContextType {
   currentUser: User | null;
   role: UserRole | null;
-  login: (email: string, role?: UserRole) => Promise<boolean>;
-  loginAsDemo: (demoEmail: string) => void;
+  login: (name: string, role: UserRole, email?: string) => void;
+  updateProfile: (name: string, schoolName?: string) => void;
   logout: () => void;
-  register: (name: string, email: string, role: UserRole) => Promise<boolean>;
   isAuthenticated: boolean;
 }
 
@@ -17,7 +15,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('edumonitor_user');
-    return saved ? JSON.parse(saved) : DEMO_USERS[0]; // Default to Teacher Demo for immediate instant preview
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    // Fresh default user (Guru by default, editable)
+    return {
+      id: 'user_teacher_1',
+      name: 'Guru', // Clean default, editable anytime
+      email: 'guru@sekolah.sch.id',
+      role: 'TEACHER',
+      schoolName: 'Sekolah EduMonitor',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      createdAt: new Date().toISOString()
+    };
   });
 
   useEffect(() => {
@@ -28,41 +38,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
-  const login = async (email: string): Promise<boolean> => {
-    const found = DEMO_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (found) {
-      setCurrentUser(found);
-      return true;
-    }
-    // Fallback: create dynamic user for testing
+  const login = (name: string, role: UserRole, email?: string) => {
     const newUser: User = {
       id: `user_${Date.now()}`,
-      name: email.split('@')[0],
-      email: email,
-      role: email.includes('guru') || email.includes('teacher') ? 'TEACHER' : 'STUDENT',
-      createdAt: new Date().toISOString()
-    };
-    setCurrentUser(newUser);
-    return true;
-  };
-
-  const loginAsDemo = (demoEmail: string) => {
-    const found = DEMO_USERS.find(u => u.email === demoEmail);
-    if (found) {
-      setCurrentUser(found);
-    }
-  };
-
-  const register = async (name: string, email: string, role: UserRole): Promise<boolean> => {
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name,
-      email,
+      name: name || (role === 'TEACHER' ? 'Guru' : 'Siswa'),
+      email: email || `${role.toLowerCase()}@sekolah.sch.id`,
       role,
+      schoolName: 'Sekolah EduMonitor',
+      avatarUrl: role === 'TEACHER' 
+        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+        : 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
       createdAt: new Date().toISOString()
     };
     setCurrentUser(newUser);
-    return true;
+  };
+
+  const updateProfile = (name: string, schoolName?: string) => {
+    if (!currentUser) return;
+    const updated: User = {
+      ...currentUser,
+      name: name.trim() || currentUser.name,
+      schoolName: schoolName !== undefined ? schoolName : currentUser.schoolName
+    };
+    setCurrentUser(updated);
   };
 
   const logout = () => {
@@ -75,9 +73,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         role: currentUser?.role || null,
         login,
-        loginAsDemo,
+        updateProfile,
         logout,
-        register,
         isAuthenticated: !!currentUser
       }}
     >

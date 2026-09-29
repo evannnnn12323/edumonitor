@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  schoolName?: string;
   avatarUrl?: string;
   createdAt: string;
 }
@@ -45,7 +46,7 @@ export interface Material {
 
 export type QuestionType = 
   | 'MULTIPLE_CHOICE'
-  | 'COMPLEX_MULTIPLE_CHOICE' // Multiple answers
+  | 'COMPLEX_MULTIPLE_CHOICE'
   | 'TRUE_FALSE'
   | 'SHORT_ANSWER'
   | 'ESSAY';
@@ -55,7 +56,7 @@ export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD';
 export interface QuestionChoice {
   id: string;
   text: string;
-  isCorrect?: boolean; // Hidden from student exam payload
+  isCorrect?: boolean;
 }
 
 export interface Question {
@@ -69,7 +70,7 @@ export interface Question {
   questionText: string;
   imageUrl?: string;
   choices?: QuestionChoice[];
-  correctAnswer?: string | string[] | boolean; // Omitted in student exam context
+  correctAnswer?: string | string[] | boolean;
   explanation?: string;
   score: number;
 }
@@ -106,10 +107,10 @@ export interface Exam {
   className: string;
   teacherId: string;
   bankId?: string;
-  startDate: string; // ISO
-  endDate: string; // ISO
-  startTime: string; // HH:mm
-  endTime: string; // HH:mm
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
   durationMinutes: number;
   totalQuestions: number;
   randomQuestionCount?: number;
@@ -129,8 +130,8 @@ export interface ExamAttempt {
   submittedAt?: string;
   status: 'IN_PROGRESS' | 'SUBMITTED' | 'EXPIRED';
   currentQuestionIndex: number;
-  flaggedQuestionIds: string[]; // Ragu-ragu
-  answers: Record<string, any>; // questionId -> answer
+  flaggedQuestionIds: string[];
+  answers: Record<string, any>;
   score?: number;
   maxScore?: number;
   passed?: boolean;
@@ -161,7 +162,7 @@ export interface MonitorEvent {
   examId: string;
   attemptId: string;
   eventType: EventType;
-  timestamp: string; // ISO
+  timestamp: string;
   questionNumber?: number;
   durationAwaySeconds?: number;
   details?: string;
@@ -181,7 +182,7 @@ export interface TeacherMessage {
   id: string;
   teacherId: string;
   teacherName: string;
-  studentId: string; // 'ALL' if broadcast
+  studentId: string;
   studentName?: string;
   examId: string;
   attemptId?: string;

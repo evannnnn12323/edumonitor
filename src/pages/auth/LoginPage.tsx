@@ -1,26 +1,20 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { DEMO_USERS } from '../../lib/demoData';
-import { ShieldCheck, LogIn, Sparkles, User, Lock } from 'lucide-react';
+import { ShieldCheck, LogIn, UserCheck, GraduationCap } from 'lucide-react';
+import { UserRole } from '../../types';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const { login, loginAsDemo } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const [name, setName] = useState('');
+  const [role, setRole] = useState<UserRole>('TEACHER');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    await login(email);
-    onLoginSuccess();
-  };
-
-  const handleDemoSelect = (demoEmail: string) => {
-    loginAsDemo(demoEmail);
+    login(name || (role === 'TEACHER' ? 'Guru' : 'Siswa'), role);
     onLoginSuccess();
   };
 
@@ -37,64 +31,60 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <p className="text-xs text-slate-400">Smart Online Learning & Assessment Platform</p>
         </div>
 
-        {/* Quick Demo Login Card */}
-        <div className="glass-panel-accent rounded-3xl p-5 border border-indigo-500/30 space-y-3">
-          <div className="flex items-center space-x-2 text-xs font-bold text-indigo-300">
-            <Sparkles className="h-4 w-4 text-indigo-400" />
-            <span>Login Cepat Demo (Siap Uji 2 Browser):</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => handleDemoSelect('guru.demo@edumonitor.local')}
-              className="rounded-xl bg-purple-600/30 border border-purple-500/40 p-3 text-left hover:bg-purple-600/40 transition"
-            >
-              <div className="text-xs font-bold text-white">Guru Demo</div>
-              <div className="text-[10px] text-purple-200">Pak Andi (Pengawas)</div>
-            </button>
-            <button
-              onClick={() => handleDemoSelect('siswa.demo@edumonitor.local')}
-              className="rounded-xl bg-emerald-600/30 border border-emerald-500/40 p-3 text-left hover:bg-emerald-600/40 transition"
-            >
-              <div className="text-xs font-bold text-white">Siswa Demo</div>
-              <div className="text-[10px] text-emerald-200">Budi Santoso (Peserta)</div>
-            </button>
-          </div>
-        </div>
-
-        {/* Regular Login Form */}
-        <form onSubmit={handleSubmit} className="glass-panel rounded-3xl p-6 border border-white/10 space-y-4 shadow-2xl">
+        {/* Clean Login Form */}
+        <form onSubmit={handleSubmit} className="glass-panel rounded-3xl p-6 border border-white/10 space-y-5 shadow-2xl">
           <h2 className="text-sm font-bold text-white text-center border-b border-white/10 pb-3">
-            Masuk Akun Pengguna
+            Masuk Aplikasi (Kosongan / Fresh)
           </h2>
 
+          {/* Role Selection */}
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Email Sekolah / Pengguna:</label>
-            <div className="relative">
-              <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@sekolah.sch.id"
-                required
-                className="w-full rounded-xl bg-slate-900 border border-white/15 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-              />
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+              Pilih Peran Pengguna:
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setRole('TEACHER')}
+                className={`flex items-center justify-center space-x-2 rounded-xl p-3 text-xs font-bold border transition ${
+                  role === 'TEACHER'
+                    ? 'bg-blue-600/30 border-blue-500 text-blue-300'
+                    : 'bg-slate-900 border-white/10 text-slate-400 hover:bg-white/5'
+                }`}
+              >
+                <UserCheck className="h-4 w-4 text-blue-400" />
+                <span>Guru (Pengawas)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole('STUDENT')}
+                className={`flex items-center justify-center space-x-2 rounded-xl p-3 text-xs font-bold border transition ${
+                  role === 'STUDENT'
+                    ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300'
+                    : 'bg-slate-900 border-white/10 text-slate-400 hover:bg-white/5'
+                }`}
+              >
+                <GraduationCap className="h-4 w-4 text-emerald-400" />
+                <span>Siswa (Peserta)</span>
+              </button>
             </div>
           </div>
 
+          {/* Name Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1">Kata Sandi / Password:</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full rounded-xl bg-slate-900 border border-white/15 pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">
+              {role === 'TEACHER' ? 'Nama Lengkap Guru:' : 'Nama Lengkap Siswa:'}
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={role === 'TEACHER' ? 'Contoh: Pak Andi, S.Pd.' : 'Contoh: Budi Santoso'}
+              className="w-full rounded-xl bg-slate-900 border border-white/15 p-3 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            />
+            <p className="mt-1 text-[11px] text-slate-500">
+              *Dapat diubah kapan saja via tombol edit di atas navbar.
+            </p>
           </div>
 
           <button
