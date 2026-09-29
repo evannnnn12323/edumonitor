@@ -12,8 +12,19 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
-// Default system PIN/Password for Teacher Access
-export const DEFAULT_TEACHER_PASSWORD = "guru123";
+// Simple hash function so the default password is never stored as plain text in source code
+const simpleHash = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash.toString(36);
+};
+
+// Pre-computed hash of the default teacher password — the actual password text is NOT in the code
+const DEFAULT_PASS_HASH = "6bg4bl";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -35,8 +46,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentUser]);
 
   const verifyTeacherPassword = (password: string): boolean => {
-    const customPass = localStorage.getItem('edumonitor_teacher_password') || DEFAULT_TEACHER_PASSWORD;
-    return password.trim() === customPass.trim();
+    const customPass = localStorage.getItem('edumonitor_teacher_password');
+    if (customPass) {
+      // User has set a custom password — compare directly with stored custom password
+      return password.trim() === customPass.trim();
+    }
+    // No custom password set — compare hash against default
+    return simpleHash(password.trim()) === DEFAULT_PASS_HASH;
   };
 
   const loginAsTeacher = (name: string, password: string): boolean => {
