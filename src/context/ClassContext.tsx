@@ -9,6 +9,7 @@ interface ClassContextType {
   deleteClass: (classId: string) => void;
   joinClassByCode: (code: string) => { success: boolean; message: string; classItem?: ClassItem };
   getJoinedClasses: () => ClassItem[];
+  updateTeacherNameInClasses: (newTeacherName: string) => void;
 }
 
 const ClassContext = createContext<ClassContextType | undefined>(undefined);
@@ -36,13 +37,38 @@ export const ClassProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return ['class_mtk_x_a'];
   });
 
+  // Helper to ensure teacherName uses the latest saved teacher name
+  const resolveClassesTeacherName = (items: ClassItem[]): ClassItem[] => {
+    const savedTeacherName = localStorage.getItem('edumonitor_saved_teacher_name');
+    if (!savedTeacherName) return items;
+    return items.map((c) => ({
+      ...c,
+      teacherName: (c.teacherName === 'Guru' || c.teacherId === 'user_teacher_1' || !c.teacherName)
+        ? savedTeacherName
+        : c.teacherName
+    }));
+  };
+
+  const formattedClasses = resolveClassesTeacherName(classes);
+
   useEffect(() => {
-    localStorage.setItem('edumonitor_classes', JSON.stringify(classes));
+    localStorage.setItem('edumonitor_classes', JSON.stringify(formattedClasses));
   }, [classes]);
 
   useEffect(() => {
     localStorage.setItem('edumonitor_joined_class_ids', JSON.stringify(joinedClassIds));
   }, [joinedClassIds]);
+
+  const updateTeacherNameInClasses = (newTeacherName: string) => {
+    const trimmed = newTeacherName.trim();
+    if (!trimmed) return;
+    setClasses((prev) =>
+      prev.map((c) => ({
+        ...c,
+        teacherName: trimmed
+      }))
+    );
+  };
 
   const addClass = (
     name: string,
@@ -51,7 +77,10 @@ export const ClassProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     teacherName: string,
     teacherId: string
   ): ClassItem => {
+    const savedTeacherName = localStorage.getItem('edumonitor_saved_teacher_name');
+    const finalTeacherName = savedTeacherName || teacherName.trim() || 'Guru';
     const randomCode = `${(subject || 'KLS').substring(0, 3).toUpperCase()}-${(grade || 'X').toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const newClass: ClassItem = {
       id: `class_${Date.now()}`,
       name: name.trim(),
@@ -59,7 +88,7 @@ export const ClassProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       grade: grade.trim(),
       code: randomCode,
       teacherId: teacherId || 'user_teacher_1',
-      teacherName: teacherName.trim() || 'Guru',
+      teacherName: finalTeacherName,
       createdAt: new Date().toISOString(),
       studentCount: 0
     };
@@ -78,7 +107,8 @@ export const ClassProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: false, message: 'Kode kelas tidak boleh kosong.' };
     }
 
-    const targetClass = classes.find((c) => c.code.trim().toUpperCase() === cleanCode);
+    const currentClasses = resolveClassesTeacherName(classes);
+    const targetClass = currentClasses.find((c) => c.code.trim().toUpperCase() === cleanCode);
     if (!targetClass) {
       return {
         success: false,
@@ -108,18 +138,20 @@ export const ClassProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const getJoinedClasses = (): ClassItem[] => {
-    return classes.filter((c) => joinedClassIds.includes(c.id));
+    const currentClasses = resolveClassesTeacherName(classes);
+    return currentClasses.filter((c) => joinedClassIds.includes(c.id));
   };
 
   return (
     <ClassContext.Provider
       value={{
-        classes,
+        classes: formattedClasses,
         joinedClassIds,
         addClass,
         deleteClass,
         joinClassByCode,
-        getJoinedClasses
+        getJoinedClasses,
+        updateTeacherNameInClasses
       }}
     >
       {children}

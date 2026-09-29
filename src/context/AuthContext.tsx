@@ -109,6 +109,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const trimmedName = name.trim() || currentUser.name;
     if (currentUser.role === 'TEACHER') {
       localStorage.setItem('edumonitor_saved_teacher_name', trimmedName);
+      const savedClassesStr = localStorage.getItem('edumonitor_classes');
+      if (savedClassesStr) {
+        try {
+          const parsed = JSON.parse(savedClassesStr);
+          if (Array.isArray(parsed)) {
+            const updated = parsed.map(c => ({ ...c, teacherName: trimmedName }));
+            localStorage.setItem('edumonitor_classes', JSON.stringify(updated));
+          }
+        } catch (e) {}
+      }
     } else if (currentUser.role === 'STUDENT') {
       localStorage.setItem('edumonitor_saved_student_name', trimmedName);
     }
