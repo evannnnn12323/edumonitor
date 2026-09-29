@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { DEMO_CLASSES, DEMO_EXAM, DEMO_USERS } from '../../lib/demoData';
 import { LayoutDashboard, Users, ClipboardList, Eye, ShieldAlert, TrendingUp, Award, Clock } from 'lucide-react';
 
@@ -7,6 +8,8 @@ interface TeacherDashboardProps {
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onNavigate }) => {
+  const { currentUser } = useAuth();
+
   return (
     <div className="space-y-6">
       
@@ -16,7 +19,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onNavigate }
           <span className="rounded-full bg-blue-500/20 px-3 py-1 text-[11px] font-bold text-blue-300 ring-1 ring-blue-500/30">
             SMP / SMA EDU-MONITOR PLATFORM
           </span>
-          <h1 className="mt-3 text-2xl font-extrabold text-white">Selamat Datang, Pak Andi!</h1>
+          <h1 className="mt-3 text-2xl font-extrabold text-white">Selamat Datang, {currentUser?.name || 'Guru'}!</h1>
           <p className="mt-2 text-xs text-slate-300 leading-relaxed">
             Pantau aktivitas ujian siswa secara akurat dan transparan. Kirim teguran atau bimbingan realtime langsung ke layar ujian siswa tanpa memotong pengerjaan.
           </p>
