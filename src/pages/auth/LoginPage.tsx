@@ -13,12 +13,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [activePortal, setActivePortal] = useState<UserRole>('STUDENT');
   
   // Teacher Form State
-  const [teacherName, setTeacherName] = useState('');
+  const [teacherName, setTeacherName] = useState(() => localStorage.getItem('edumonitor_saved_teacher_name') || '');
   const [teacherPassword, setTeacherPassword] = useState('');
   const [teacherError, setTeacherError] = useState('');
 
   // Student Form State
-  const [studentName, setStudentName] = useState('');
+  const [studentName, setStudentName] = useState(() => localStorage.getItem('edumonitor_saved_student_name') || '');
 
   const handleTeacherLogin = (e: React.FormEvent) => {
     e.preventDefault();

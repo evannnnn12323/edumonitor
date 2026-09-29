@@ -4,26 +4,24 @@ import { User, UserRole } from '../types';
 interface AuthContextType {
   currentUser: User | null;
   role: UserRole | null;
-  loginAsTeacher: (name: string, password: string) => boolean;
-  loginAsStudent: (name: string) => void;
+  loginAsTeacher: (name?: string, password?: string) => boolean;
+  loginAsStudent: (name?: string) => void;
   updateProfile: (name: string, schoolName?: string) => void;
   verifyTeacherPassword: (password: string) => boolean;
   logout: () => void;
   isAuthenticated: boolean;
 }
 
-// Simple hash function so the default password is never stored as plain text in source code
 const simpleHash = (str: string): string => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash |= 0; // Convert to 32bit integer
+    hash |= 0;
   }
   return hash.toString(36);
 };
 
-// Pre-computed hash of the default teacher password — the actual password text is NOT in the code
 const DEFAULT_PASS_HASH = "6bg4bl";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return null; // Fresh start: User lands on Login Portal selection screen first
+    return null;
   });
 
   useEffect(() => {
@@ -48,48 +46,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyTeacherPassword = (password: string): boolean => {
     const customPass = localStorage.getItem('edumonitor_teacher_password');
     if (customPass) {
-      // User has set a custom password — compare directly with stored custom password
       return password.trim() === customPass.trim();
     }
-    // No custom password set — compare hash against default
     return simpleHash(password.trim()) === DEFAULT_PASS_HASH;
   };
 
-  const loginAsTeacher = (name: string, password: string): boolean => {
-    if (!verifyTeacherPassword(password)) {
+  const loginAsTeacher = (name?: string, password?: string): boolean => {
+    if (password && !verifyTeacherPassword(password)) {
       return false;
     }
+
+    const savedName = localStorage.getItem('edumonitor_saved_teacher_name');
+    let finalName = name?.trim() || '';
+
+    if (finalName && finalName !== 'Guru') {
+      localStorage.setItem('edumonitor_saved_teacher_name', finalName);
+    } else if (savedName) {
+      finalName = savedName;
+    } else {
+      finalName = 'Guru';
+    }
+
     const newUser: User = {
-      id: `user_teacher_${Date.now()}`,
-      name: name.trim() || 'Guru',
+      id: currentUser?.role === 'TEACHER' ? currentUser.id : `user_teacher_${Date.now()}`,
+      name: finalName,
       email: 'guru@sekolah.sch.id',
       role: 'TEACHER',
-      schoolName: 'Sekolah EduMonitor',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      createdAt: new Date().toISOString()
+      schoolName: currentUser?.schoolName || 'Sekolah EduMonitor',
+      avatarUrl: currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      createdAt: currentUser?.createdAt || new Date().toISOString()
     };
     setCurrentUser(newUser);
     return true;
   };
 
-  const loginAsStudent = (name: string) => {
+  const loginAsStudent = (name?: string) => {
+    const savedName = localStorage.getItem('edumonitor_saved_student_name');
+    let finalName = name?.trim() || '';
+
+    if (finalName && finalName !== 'Siswa') {
+      localStorage.setItem('edumonitor_saved_student_name', finalName);
+    } else if (savedName) {
+      finalName = savedName;
+    } else {
+      finalName = 'Siswa';
+    }
+
     const newUser: User = {
-      id: `user_student_${Date.now()}`,
-      name: name.trim() || 'Siswa',
+      id: currentUser?.role === 'STUDENT' ? currentUser.id : `user_student_${Date.now()}`,
+      name: finalName,
       email: 'siswa@sekolah.sch.id',
       role: 'STUDENT',
-      schoolName: 'Sekolah EduMonitor',
-      avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
-      createdAt: new Date().toISOString()
+      schoolName: currentUser?.schoolName || 'Sekolah EduMonitor',
+      avatarUrl: currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150',
+      createdAt: currentUser?.createdAt || new Date().toISOString()
     };
     setCurrentUser(newUser);
   };
 
   const updateProfile = (name: string, schoolName?: string) => {
     if (!currentUser) return;
+    const trimmedName = name.trim() || currentUser.name;
+    if (currentUser.role === 'TEACHER') {
+      localStorage.setItem('edumonitor_saved_teacher_name', trimmedName);
+    } else if (currentUser.role === 'STUDENT') {
+      localStorage.setItem('edumonitor_saved_student_name', trimmedName);
+    }
+
     const updated: User = {
       ...currentUser,
-      name: name.trim() || currentUser.name,
+      name: trimmedName,
       schoolName: schoolName !== undefined ? schoolName : currentUser.schoolName
     };
     setCurrentUser(updated);

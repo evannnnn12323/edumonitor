@@ -36,13 +36,15 @@ export const Navbar: React.FC = () => {
       setPassError('Password Guru yang Anda masukkan salah!');
       return;
     }
-    loginAsTeacher('Guru', inputPassword);
+    const savedName = localStorage.getItem('edumonitor_saved_teacher_name') || (currentUser?.role === 'TEACHER' ? currentUser.name : '');
+    loginAsTeacher(savedName, inputPassword);
     setIsPasswordModalOpen(false);
   };
 
   const handleSwitchToStudent = () => {
     if (currentUser?.role === 'STUDENT') return;
-    loginAsStudent('Siswa');
+    const savedName = localStorage.getItem('edumonitor_saved_student_name') || '';
+    loginAsStudent(savedName);
   };
 
   return (
