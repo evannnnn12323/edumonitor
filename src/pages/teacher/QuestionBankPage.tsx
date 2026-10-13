@@ -7,7 +7,8 @@ import {
 } from '../../lib/questionParser';
 import {
   FileQuestion, Plus, Upload, Trash2, Edit3, Search, CheckCircle,
-  AlertCircle, Sparkles, X, Check, FileText, ArrowRight, CornerDownRight
+  AlertCircle, Sparkles, X, Check, FileText, ArrowRight, CornerDownRight,
+  CheckSquare, Square, AlertTriangle
 } from 'lucide-react';
 
 export const QuestionBankPage: React.FC = () => {
@@ -16,6 +17,10 @@ export const QuestionBankPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('ALL');
   const [selectedDifficulty, setSelectedDifficulty] = useState('ALL');
+
+  // Multi-select bulk delete state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -147,7 +152,38 @@ export const QuestionBankPage: React.FC = () => {
     if (window.confirm('Hapus soal ini dari Bank Soal?')) {
       const updated = questions.filter((q) => q.id !== id);
       saveQuestions(updated);
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
     }
+  };
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredQuestions.length && filteredQuestions.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredQuestions.map((q) => q.id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.length === 0) return;
+    if (window.confirm(`Hapus ${selectedIds.length} butir soal yang dipilih sekaligus?`)) {
+      const updated = questions.filter((q) => !selectedIds.includes(q.id));
+      saveQuestions(updated);
+      setSelectedIds([]);
+    }
+  };
+
+  const handleDeleteAll = () => {
+    if (questions.length === 0) return;
+    saveQuestions([]);
+    setSelectedIds([]);
+    setShowClearConfirmModal(false);
   };
 
   // Handle File Upload & Extract
@@ -353,6 +389,59 @@ export const QuestionBankPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Bulk Action & Delete Bar */}
+      {questions.length > 0 && (
+        <div className="glass-panel p-3.5 rounded-2xl border border-white/10 flex flex-wrap items-center justify-between gap-3 bg-slate-900/70 shadow-lg">
+          <div className="flex items-center space-x-2.5">
+            <button
+              type="button"
+              onClick={handleSelectAll}
+              className="flex items-center space-x-2 text-xs font-bold text-slate-300 hover:text-white transition px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10"
+            >
+              {selectedIds.length === filteredQuestions.length && filteredQuestions.length > 0 ? (
+                <CheckSquare className="h-4 w-4 text-blue-400" />
+              ) : (
+                <Square className="h-4 w-4 text-slate-400" />
+              )}
+              <span>
+                {selectedIds.length === filteredQuestions.length && filteredQuestions.length > 0
+                  ? 'Batal Pilih Semua'
+                  : `Pilih Semua (${filteredQuestions.length})`}
+              </span>
+            </button>
+
+            {selectedIds.length > 0 && (
+              <span className="text-xs font-bold text-blue-300 bg-blue-500/20 px-3 py-1.5 rounded-xl border border-blue-500/30">
+                {selectedIds.length} Soal Dipilih
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {selectedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={handleDeleteSelected}
+                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/30 transition animate-pulse"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Hapus {selectedIds.length} Soal Terpilih</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowClearConfirmModal(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 border border-rose-500/30 text-xs font-semibold transition"
+              title="Hapus seluruh soal yang tersimpan di Bank Soal"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+              <span>Hapus Semua Soal ({questions.length})</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Questions List */}
       {filteredQuestions.length === 0 ? (
         <div className="glass-panel rounded-3xl p-12 text-center border border-white/10 space-y-4">
@@ -389,13 +478,31 @@ export const QuestionBankPage: React.FC = () => {
           {filteredQuestions.map((q, idx) => (
             <div
               key={q.id}
-              className="glass-panel p-5 rounded-2xl border border-white/10 hover:border-white/20 transition space-y-3"
+              className={`glass-panel p-5 rounded-2xl border transition space-y-3 ${
+                selectedIds.includes(q.id)
+                  ? 'border-blue-500/60 bg-blue-500/5 shadow-lg shadow-blue-500/10'
+                  : 'border-white/10 hover:border-white/20'
+              }`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start space-x-3">
-                  <span className="flex-shrink-0 flex items-center justify-center h-6 w-6 rounded-lg bg-blue-500/20 text-blue-400 font-bold text-xs">
-                    {idx + 1}
-                  </span>
+                  {/* Select Checkbox Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSelect(q.id)}
+                    className={`flex-shrink-0 flex items-center justify-center h-6 w-6 rounded-lg transition border ${
+                      selectedIds.includes(q.id)
+                        ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-600/40'
+                        : 'bg-slate-900 border-white/20 text-slate-400 hover:border-blue-400'
+                    }`}
+                    title={selectedIds.includes(q.id) ? 'Batal pilih soal ini' : 'Pilih soal ini'}
+                  >
+                    {selectedIds.includes(q.id) ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <span className="text-[10px] font-bold text-slate-400">{idx + 1}</span>
+                    )}
+                  </button>
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-300">
@@ -626,13 +733,24 @@ Kunci: C`}
               {/* Parsed Live Review Section */}
               {uploadStatus === 'success' && (
                 <div className="space-y-3 pt-2">
-                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="h-4 w-4 shrink-0" />
                       <span>
                         Berhasil membaca <strong>{parsedPreview.length} butir soal</strong>! Anda dapat memeriksa atau mengubah kunci jawaban di bawah sebelum disimpan:
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setParsedPreview([]);
+                        setUploadStatus('idle');
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-[11px] border border-rose-500/30 transition flex items-center space-x-1 shrink-0"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Bersihkan Semua</span>
+                    </button>
                   </div>
 
                   {/* List of Detected Questions with live editing */}
@@ -899,6 +1017,40 @@ Kunci: C`}
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* MODAL 3: Konfirmasi Hapus Semua Soal Sekaligus */}
+      {showClearConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="glass-panel w-full max-w-md rounded-3xl p-6 border border-rose-500/30 bg-slate-950 shadow-2xl space-y-4">
+            <div className="h-12 w-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto border border-rose-500/30">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="text-center space-y-1.5">
+              <h3 className="text-base font-bold text-white">Hapus Semua Soal Sekaligus?</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Tindakan ini akan menghapus seluruh <strong className="text-white">{questions.length} butir soal</strong> yang tersimpan di Bank Soal secara permanen. Anda tidak dapat membatalkan tindakan ini.
+              </p>
+            </div>
+            <div className="flex items-center space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirmModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition"
+              >
+                Batalkan
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAll}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white shadow-lg shadow-rose-600/30 transition flex items-center justify-center space-x-1.5"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Ya, Hapus Semua</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

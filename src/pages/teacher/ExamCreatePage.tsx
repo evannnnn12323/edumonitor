@@ -4,7 +4,7 @@ import { useClasses } from '../../context/ClassContext';
 import { extractTextFromFile, parseQuestionsFromText } from '../../lib/questionParser';
 import {
   ClipboardList, ShieldAlert, Save, Info, Upload, FileText, CheckCircle,
-  AlertCircle, Sparkles, X, ChevronDown, ChevronUp, FileQuestion
+  AlertCircle, Sparkles, X, ChevronDown, ChevronUp, FileQuestion, Trash2
 } from 'lucide-react';
 
 interface ExamCreatePageProps {
@@ -252,21 +252,38 @@ export const ExamCreatePage: React.FC<ExamCreatePageProps> = ({ onSuccess }) => 
 
             {uploadStatus === 'success' && uploadedQuestions.length > 0 && (
               <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/30 p-4 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center space-x-2">
                     <CheckCircle className="h-5 w-5 text-emerald-400" />
                     <span className="text-xs font-bold text-white">
                       Berhasil! <strong className="text-emerald-400">{uploadedQuestions.length} soal</strong> berhasil diurai dari file.
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewExpanded(!previewExpanded)}
-                    className="text-xs text-emerald-300 hover:underline flex items-center space-x-1"
-                  >
-                    <span>{previewExpanded ? 'Sembunyikan Pratinjau' : 'Lihat Pratinjau Soal'}</span>
-                    {previewExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </button>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewExpanded(!previewExpanded)}
+                      className="text-xs text-emerald-300 hover:underline flex items-center space-x-1"
+                    >
+                      <span>{previewExpanded ? 'Sembunyikan' : 'Lihat Pratinjau'}</span>
+                      {previewExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('Hapus seluruh soal yang diunggah dari formulir ini?')) {
+                          setUploadedQuestions([]);
+                          setUploadedFileName('');
+                          setUploadStatus('idle');
+                          setTotalQuestions(20);
+                        }
+                      }}
+                      className="text-xs text-rose-400 hover:text-rose-300 hover:underline flex items-center space-x-1 font-semibold"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Hapus Soal Ini</span>
+                    </button>
+                  </div>
                 </div>
 
                 {previewExpanded && (
