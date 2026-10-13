@@ -6,6 +6,7 @@ import {
   ClipboardList, ShieldAlert, Save, Info, Upload, FileText, CheckCircle,
   AlertCircle, Sparkles, X, ChevronDown, ChevronUp, FileQuestion, Trash2
 } from 'lucide-react';
+import { MathText } from '../../components/common/MathText';
 
 interface ExamCreatePageProps {
   onSuccess: () => void;
@@ -290,10 +291,15 @@ export const ExamCreatePage: React.FC<ExamCreatePageProps> = ({ onSuccess }) => 
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     {uploadedQuestions.map((q, idx) => (
                       <div key={idx} className="rounded-xl bg-slate-900/80 p-3 border border-white/10 text-xs space-y-1">
-                        <div className="font-bold text-emerald-300">Soal #{idx + 1}: {q.questionText}</div>
+                        <div className="font-bold text-emerald-300 flex items-start space-x-1">
+                          <span>Soal #{idx + 1}:</span>
+                          <span className="flex-1"><MathText text={q.questionText || ''} /></span>
+                        </div>
                         {q.choices && (q.choices as any[]).map((c: any, ci: number) => (
-                          <div key={ci} className={`text-[11px] ${c.isCorrect ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
-                            {CHOICE_LABELS[ci]}. {c.text} {c.isCorrect ? '✓ (Kunci)' : ''}
+                          <div key={ci} className={`text-[11px] flex items-center space-x-1.5 ${c.isCorrect ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
+                            <span>{CHOICE_LABELS[ci]}.</span>
+                            <span className="flex-1"><MathText text={c.text} /></span>
+                            {c.isCorrect && <span>✓ (Kunci)</span>}
                           </div>
                         ))}
                       </div>

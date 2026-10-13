@@ -8,8 +8,10 @@ import {
 import {
   FileQuestion, Plus, Upload, Trash2, Edit3, Search, CheckCircle,
   AlertCircle, Sparkles, X, Check, FileText, ArrowRight, CornerDownRight,
-  CheckSquare, Square, AlertTriangle
+  CheckSquare, Square, AlertTriangle, Calculator
 } from 'lucide-react';
+import { MathEquationToolbar } from '../../components/common/MathEquationToolbar';
+import { MathText } from '../../components/common/MathText';
 
 export const QuestionBankPage: React.FC = () => {
   const { classes } = useClasses();
@@ -21,6 +23,10 @@ export const QuestionBankPage: React.FC = () => {
   // Multi-select bulk delete state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+
+  // Equation Editor Toolbar state
+  const [showEquationToolbar, setShowEquationToolbar] = useState(true);
+  const [activeEquationTarget, setActiveEquationTarget] = useState<'question' | 'explanation' | number>('question');
 
   // Modal States
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -184,6 +190,36 @@ export const QuestionBankPage: React.FC = () => {
     saveQuestions([]);
     setSelectedIds([]);
     setShowClearConfirmModal(false);
+  };
+
+  const handleInsertEquation = (latexFormula: string) => {
+    if (activeEquationTarget === 'question') {
+      setFormQuestionText((prev) => (prev ? `${prev} ${latexFormula}` : latexFormula));
+    } else if (activeEquationTarget === 'explanation') {
+      setFormExplanation((prev) => (prev ? `${prev} ${latexFormula}` : latexFormula));
+    } else if (typeof activeEquationTarget === 'number') {
+      setFormChoices((prev) => {
+        const next = [...prev];
+        if (next[activeEquationTarget]) {
+          const old = next[activeEquationTarget].text;
+          next[activeEquationTarget] = {
+            ...next[activeEquationTarget],
+            text: old ? `${old} ${latexFormula}` : latexFormula
+          };
+        }
+        return next;
+      });
+    }
+  };
+
+  const getTargetLabel = () => {
+    if (activeEquationTarget === 'question') return 'Teks Pertanyaan';
+    if (activeEquationTarget === 'explanation') return 'Pembahasan';
+    if (typeof activeEquationTarget === 'number') {
+      const label = ['A', 'B', 'C', 'D', 'E'][activeEquationTarget] || String(activeEquationTarget + 1);
+      return `Pilihan ${label}`;
+    }
+    return 'Teks Pertanyaan';
   };
 
   // Handle File Upload & Extract
@@ -530,9 +566,9 @@ export const QuestionBankPage: React.FC = () => {
                       <span className="text-[10px] text-slate-400">Skor: {q.score}</span>
                     </div>
 
-                    <p className="text-sm font-medium text-white whitespace-pre-line leading-relaxed">
-                      {q.questionText}
-                    </p>
+                    <div className="text-sm font-medium text-white leading-relaxed">
+                      <MathText text={q.questionText} />
+                    </div>
                   </div>
                 </div>
 
@@ -573,7 +609,9 @@ export const QuestionBankPage: React.FC = () => {
                       >
                         {c.id}
                       </span>
-                      <span className="flex-1">{c.text}</span>
+                      <span className="flex-1">
+                        <MathText text={c.text} />
+                      </span>
                       {c.isCorrect && <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" />}
                     </div>
                   ))}
@@ -583,7 +621,7 @@ export const QuestionBankPage: React.FC = () => {
               {q.explanation && (
                 <div className="ml-9 p-2.5 rounded-xl bg-slate-900/80 border border-white/5 text-xs text-slate-400">
                   <span className="font-bold text-slate-300">Pembahasan: </span>
-                  {q.explanation}
+                  <MathText text={q.explanation} />
                 </div>
               )}
             </div>
@@ -856,26 +894,110 @@ Kunci: C`}
         </div>
       )}
 
-      {/* MODAL 2: Add / Edit Manual Question */}
+      {/* MODAL 2: Add / Edit Manual Question with Microsoft Word Style Math Equation Toolbar */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
           <form
             onSubmit={handleSaveManualQuestion}
-            className="glass-panel w-full max-w-2xl rounded-3xl p-6 border border-white/10 bg-slate-950 shadow-2xl space-y-4 my-8"
+            className="glass-panel w-full max-w-4xl rounded-3xl p-6 border border-white/10 bg-slate-950 shadow-2xl space-y-4 my-8 max-h-[92vh] overflow-y-auto"
           >
+            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <h3 className="text-base font-bold text-white">
-                {editingQuestion ? 'Edit Soal' : 'Tambah Soal Manual'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center space-x-3">
+                <div className="h-9 w-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                  <Calculator className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    {editingQuestion ? 'Edit Soal' : 'Tambah Soal Manual'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Mendukung rumus matematika lengkap (pecahan, akar, pangkat, integral, matriks, dsb).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEquationToolbar(!showEquationToolbar)}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border ${
+                    showEquationToolbar
+                      ? 'bg-blue-600/30 border-blue-500/50 text-blue-300 shadow-md shadow-blue-500/20'
+                      : 'bg-slate-900 border-white/10 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>∑ Ribbon Rumus (Word)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
+            {/* Target Field Selector for Equation Insertion */}
+            {showEquationToolbar && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/80 p-2 rounded-xl border border-white/10">
+                  <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center space-x-1">
+                    <span>Sisipkan ke:</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveEquationTarget('question')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                      activeEquationTarget === 'question'
+                        ? 'bg-blue-600 text-white shadow'
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Teks Pertanyaan
+                  </button>
+
+                  {formType === 'MULTIPLE_CHOICE' &&
+                    formChoices.map((choice, i) => (
+                      <button
+                        key={choice.id}
+                        type="button"
+                        onClick={() => setActiveEquationTarget(i)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase transition ${
+                          activeEquationTarget === i
+                            ? 'bg-blue-600 text-white shadow'
+                            : 'bg-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Pilihan {choice.id}
+                      </button>
+                    ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveEquationTarget('explanation')}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                      activeEquationTarget === 'explanation'
+                        ? 'bg-blue-600 text-white shadow'
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Pembahasan
+                  </button>
+                </div>
+
+                {/* Microsoft Word Style Math Equation Toolbar */}
+                <MathEquationToolbar
+                  onInsert={handleInsertEquation}
+                  activeTargetLabel={getTargetLabel()}
+                />
+              </div>
+            )}
+
+            {/* Basic Info: Mapel, Materi, Tingkat */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-400 mb-1">Mata Pelajaran</label>
@@ -894,7 +1016,7 @@ Kunci: C`}
                   type="text"
                   value={formMaterial}
                   onChange={(e) => setFormMaterial(e.target.value)}
-                  placeholder="Contoh: Aljabar"
+                  placeholder="Contoh: Aljabar, Trigonometri, Kalkulus"
                   className="w-full px-3 py-2 bg-slate-900 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
@@ -913,18 +1035,43 @@ Kunci: C`}
               </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Teks Pertanyaan</label>
+            {/* Question Text with Live Math Preview */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-semibold text-slate-300">
+                  Teks Pertanyaan (Gunakan $...$ untuk rumus matematika)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setActiveEquationTarget('question')}
+                  className="text-[10px] text-blue-400 hover:underline"
+                >
+                  + Fokus Sisip Rumus
+                </button>
+              </div>
               <textarea
                 rows={3}
                 value={formQuestionText}
+                onFocus={() => setActiveEquationTarget('question')}
                 onChange={(e) => setFormQuestionText(e.target.value)}
                 required
-                placeholder="Tuliskan butir soal pertanyaan di sini..."
-                className="w-full p-3 bg-slate-900 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 resize-none"
+                placeholder="Tuliskan soal pertanyaan di sini. Contoh: Nilai dari $\lim_{x \to 0} \frac{\sin 2x}{x}$ adalah..."
+                className="w-full p-3 bg-slate-900 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 resize-none font-mono"
               />
+
+              {formQuestionText && formQuestionText.includes('$') && (
+                <div className="p-3 rounded-xl bg-slate-900/90 border border-blue-500/30 text-xs text-white shadow-inner">
+                  <span className="text-[10px] text-blue-400 font-bold block mb-1">
+                    Pratinjau Tampilan Rumus:
+                  </span>
+                  <div className="leading-relaxed">
+                    <MathText text={formQuestionText} />
+                  </div>
+                </div>
+              )}
             </div>
 
+            {/* Question Type and Score */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-400 mb-1">Tipe Soal</label>
@@ -951,57 +1098,122 @@ Kunci: C`}
               </div>
             </div>
 
-            {/* Choices list for Multiple Choice */}
+            {/* Choices list for Multiple Choice with equation insertion */}
             {formType === 'MULTIPLE_CHOICE' && (
-              <div className="space-y-2">
-                <label className="block text-[11px] font-semibold text-slate-400">
-                  Pilihan Jawaban (Pilih radio untuk jawaban yang benar)
-                </label>
-                {formChoices.map((choice, idx) => (
-                  <div key={choice.id} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="correct_choice"
-                      checked={choice.isCorrect}
-                      onChange={() => {
-                        setFormChoices(
-                          formChoices.map((c, i) => ({
-                            ...c,
-                            isCorrect: i === idx
-                          }))
-                        );
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-semibold text-slate-300">
+                    Pilihan Jawaban (Pilih radio untuk kunci jawaban yang benar)
+                  </label>
+                  {formChoices.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextId = String.fromCharCode(97 + formChoices.length);
+                        setFormChoices([...formChoices, { id: nextId, text: '', isCorrect: false }]);
                       }}
-                      className="accent-blue-500"
-                    />
-                    <span className="text-xs font-bold text-slate-400 uppercase w-4">{choice.id}.</span>
-                    <input
-                      type="text"
-                      value={choice.text}
-                      onChange={(e) => {
-                        const updated = [...formChoices];
-                        updated[idx].text = e.target.value;
-                        setFormChoices(updated);
-                      }}
-                      placeholder={`Teks pilihan ${choice.id.toUpperCase()}`}
-                      className="flex-1 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                ))}
+                      className="text-[10px] text-blue-400 hover:text-blue-300 font-bold hover:underline"
+                    >
+                      + Tambah Pilihan ({String.fromCharCode(65 + formChoices.length)})
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {formChoices.map((choice, idx) => (
+                    <div key={choice.id} className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="correct_choice"
+                          checked={choice.isCorrect}
+                          onChange={() => {
+                            setFormChoices(
+                              formChoices.map((c, i) => ({
+                                ...c,
+                                isCorrect: i === idx
+                              }))
+                            );
+                          }}
+                          className="accent-emerald-500 h-4 w-4 shrink-0"
+                          title="Tandai sebagai jawaban benar"
+                        />
+                        <span className="text-xs font-bold text-slate-400 uppercase w-4">{choice.id}.</span>
+                        <input
+                          type="text"
+                          value={choice.text}
+                          onFocus={() => setActiveEquationTarget(idx)}
+                          onChange={(e) => {
+                            const updated = [...formChoices];
+                            updated[idx].text = e.target.value;
+                            setFormChoices(updated);
+                          }}
+                          placeholder={`Teks pilihan ${choice.id.toUpperCase()} (bisa rumus: $\\frac{1}{2}$)`}
+                          className="flex-1 px-3 py-2 bg-slate-900 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                        />
+                        {choice.isCorrect && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                            KUNCI
+                          </span>
+                        )}
+                        {formChoices.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = formChoices.filter((_, ci) => ci !== idx);
+                              setFormChoices(updated);
+                            }}
+                            className="p-1 text-slate-500 hover:text-rose-400 transition"
+                            title="Hapus pilihan ini"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Live Math Preview for Choice */}
+                      {choice.text && choice.text.includes('$') && (
+                        <div className="ml-10 p-1.5 rounded-lg bg-slate-900/60 border border-white/5 text-xs text-blue-300">
+                          <MathText text={choice.text} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Pembahasan (Opsional)</label>
+            {/* Explanation with Math Preview */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-[11px] font-semibold text-slate-400">Pembahasan (Opsional)</label>
+                <button
+                  type="button"
+                  onClick={() => setActiveEquationTarget('explanation')}
+                  className="text-[10px] text-blue-400 hover:underline"
+                >
+                  + Fokus Sisip Rumus
+                </button>
+              </div>
               <textarea
                 rows={2}
                 value={formExplanation}
+                onFocus={() => setActiveEquationTarget('explanation')}
                 onChange={(e) => setFormExplanation(e.target.value)}
-                placeholder="Penjelasan pembahasan soal..."
-                className="w-full p-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 resize-none"
+                placeholder="Penjelasan pembahasan soal (bisa mengandung rumus $...$)..."
+                className="w-full p-2.5 bg-slate-900 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 resize-none font-mono"
               />
+
+              {formExplanation && formExplanation.includes('$') && (
+                <div className="p-2 rounded-xl bg-slate-900/90 border border-blue-500/30 text-xs text-white">
+                  <span className="text-[10px] text-blue-400 font-bold block mb-0.5">Pratinjau Pembahasan:</span>
+                  <MathText text={formExplanation} />
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-end space-x-2 pt-2 border-t border-white/10">
+            {/* Footer Form Buttons */}
+            <div className="flex justify-end space-x-2 pt-3 border-t border-white/10">
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
@@ -1011,7 +1223,7 @@ Kunci: C`}
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white rounded-xl shadow-lg shadow-blue-500/30 transition"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white rounded-xl shadow-lg shadow-blue-500/30 transition"
               >
                 {editingQuestion ? 'Perbarui Soal' : 'Simpan Soal'}
               </button>
