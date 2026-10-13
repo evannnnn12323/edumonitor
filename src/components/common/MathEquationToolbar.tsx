@@ -63,12 +63,12 @@ export const MathEquationToolbar: React.FC<MathEquationToolbarProps> = ({
   activeTargetLabel = 'Bidang Aktif',
   className = ''
 }) => {
-  const [activeTab, setActiveTab] = useState<'structures' | 'symbols' | 'greek' | 'templates'>('structures');
+  const [activeTab, setActiveTab] = useState<'structures' | 'logarithm' | 'symbols' | 'greek' | 'templates'>('structures');
   const [customLatex, setCustomLatex] = useState('');
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
-  // 1. STRUCTURES (Pecahan, Akar, Pangkat, Kurung, Integral, Sigma, Matriks)
+  // 1. STRUCTURES (Pecahan, Akar, Pangkat, Kurung, Integral, Sigma, Matriks, Logaritma)
   const structures: EquationItem[] = [
     // Pecahan
     { label: 'Pecahan', latex: '\\frac{a}{b}', category: 'Pecahan', description: 'Pecahan a/b' },
@@ -79,6 +79,14 @@ export const MathEquationToolbar: React.FC<MathEquationToolbarProps> = ({
     { label: 'Akar Kuadrat', latex: '\\sqrt{x}', category: 'Akar', description: 'Akar kuadrat dari x' },
     { label: 'Akar Pangkat n', latex: '\\sqrt[n]{x}', category: 'Akar', description: 'Akar pangkat n dari x' },
     { label: 'Akar Kuadrat Jumlah', latex: '\\sqrt{a^2 + b^2}', category: 'Akar', description: 'Akar a kuadrat + b kuadrat' },
+
+    // Logaritma
+    { label: 'Logaritma Indo', latex: '^{a}\\log b', category: 'Logaritma', description: 'Logaritma basis a di atas (standar kurikulum Indonesia)' },
+    { label: 'Logaritma Basis 2', latex: '^{2}\\log x', category: 'Logaritma', description: 'Logaritma basis 2' },
+    { label: 'Logaritma Basis 10', latex: '\\log x', category: 'Logaritma', description: 'Logaritma basis 10' },
+    { label: 'Log Subscript', latex: '\\log_{a} b', category: 'Logaritma', description: 'Logaritma basis a di bawah' },
+    { label: 'Log Natural (ln)', latex: '\\ln(x)', category: 'Logaritma', description: 'Logaritma natural' },
+    { label: 'Pangkat Logaritma', latex: '^{a^m}\\log(b^n)', category: 'Logaritma', description: 'Basis dan numerus berpangkat' },
 
     // Pangkat & Indeks
     { label: 'Pangkat (Superscript)', latex: 'x^{2}', category: 'Pangkat & Indeks', description: 'x pangkat 2' },
@@ -110,6 +118,93 @@ export const MathEquationToolbar: React.FC<MathEquationToolbarProps> = ({
     { label: 'Matriks 2x2', latex: '\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}', category: 'Matriks', description: 'Matriks 2x2' },
     { label: 'Matriks 3x3', latex: '\\begin{pmatrix} a & b & c \\\\ d & e & f \\\\ g & h & i \\end{pmatrix}', category: 'Matriks', description: 'Matriks 3x3' },
     { label: 'Determinan 2x2', latex: '\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}', category: 'Matriks', description: 'Determinan matriks 2x2' }
+  ];
+
+  // 1B. LOGARITMA SPESIFIK (Kurikulum Indonesia, Internasional & Sifat-sifat Lengkap)
+  const logarithmIndonesia: EquationItem[] = [
+    { label: 'Basis a', latex: '^{a}\\log b', description: 'Notasi logaritma kurikulum Indonesia', category: 'Format Indo' },
+    { label: 'Basis 2', latex: '^{2}\\log x', description: 'Logaritma basis 2', category: 'Format Indo' },
+    { label: 'Basis 3', latex: '^{3}\\log x', description: 'Logaritma basis 3', category: 'Format Indo' },
+    { label: 'Basis 5', latex: '^{5}\\log x', description: 'Logaritma basis 5', category: 'Format Indo' },
+    { label: 'Basis 10', latex: '^{10}\\log x', description: 'Logaritma basis 10', category: 'Format Indo' },
+    { label: 'Contoh Angka', latex: '^{2}\\log 8 = 3', description: '2 log 8 = 3', category: 'Format Indo' },
+    { label: 'Pangkat Numerus', latex: '^{a}\\log(b^n)', description: 'Numerus b berpangkat n', category: 'Format Indo' },
+    { label: 'Pangkat Basis & Numerus', latex: '^{a^m}\\log(b^n)', description: 'Basis m dan numerus n berpangkat', category: 'Format Indo' },
+    { label: 'Logaritma dari 1', latex: '^{a}\\log 1 = 0', description: 'Logaritma dari 1 selalu sama dengan 0', category: 'Format Indo' },
+    { label: 'Basis = Numerus', latex: '^{a}\\log a = 1', description: 'Jika basis sama dengan numerus hasilnya 1', category: 'Format Indo' }
+  ];
+
+  const logarithmInternational: EquationItem[] = [
+    { label: 'Log Subscript a', latex: '\\log_{a} b', description: 'Logaritma basis a di bawah', category: 'Internasional' },
+    { label: 'Log Subscript 2', latex: '\\log_{2} x', description: 'Logaritma basis 2', category: 'Internasional' },
+    { label: 'Log Subscript 10', latex: '\\log_{10} x', description: 'Logaritma basis 10', category: 'Internasional' },
+    { label: 'Log Desimal (10)', latex: '\\log(x)', description: 'Logaritma umum basis 10', category: 'Internasional' },
+    { label: 'Log Natural (ln)', latex: '\\ln(x)', description: 'Logaritma natural basis e', category: 'Internasional' },
+    { label: 'ln dari e', latex: '\\ln(e) = 1', description: 'Logaritma natural dari bilangan e', category: 'Internasional' },
+    { label: 'Invers Eksponen', latex: 'e^{\\ln(x)} = x', description: 'Sifat invers eksponen dan ln', category: 'Internasional' }
+  ];
+
+  const logarithmIdentities: EquationItem[] = [
+    {
+      label: 'Definisi Logaritma',
+      latex: '^{a}\\log b = c \\iff a^c = b',
+      description: 'Hubungan bentuk logaritma dan pangkat/eksponen',
+      category: 'Definisi'
+    },
+    {
+      label: 'Penjumlahan (Perkalian)',
+      latex: '^{a}\\log(x \\cdot y) = {}^{a}\\log x + {}^{a}\\log y',
+      description: 'Logaritma perkalian menjadi penjumlahan logaritma',
+      category: 'Sifat'
+    },
+    {
+      label: 'Pengurangan (Pembagian)',
+      latex: '^{a}\\log\\left(\\frac{x}{y}\\right) = {}^{a}\\log x - {}^{a}\\log y',
+      description: 'Logaritma pembagian menjadi pengurangan logaritma',
+      category: 'Sifat'
+    },
+    {
+      label: 'Pangkat Numerus',
+      latex: '^{a}\\log(x^n) = n \\cdot {}^{a}\\log x',
+      description: 'Pangkat numerus maju ke depan sebagai pengali',
+      category: 'Sifat'
+    },
+    {
+      label: 'Pangkat Basis & Numerus',
+      latex: '^{a^m}\\log(b^n) = \\frac{n}{m} \\cdot {}^{a}\\log b',
+      description: 'Pangkat basis m dan numerus n menjadi n/m',
+      category: 'Sifat'
+    },
+    {
+      label: 'Pengubahan Basis Baru',
+      latex: '^{a}\\log b = \\frac{^{c}\\log b}{^{c}\\log a} = \\frac{\\log b}{\\log a}',
+      description: 'Mengubah basis logaritma ke basis c atau basis 10',
+      category: 'Sifat'
+    },
+    {
+      label: 'Perkalian Berantai',
+      latex: '^{a}\\log b \\cdot {}^{b}\\log c = {}^{a}\\log c',
+      description: 'Perkalian berantai logaritma dengan numerus dan basis sama',
+      category: 'Sifat'
+    },
+    {
+      label: 'Kebalikan Basis',
+      latex: '^{a}\\log b = \\frac{1}{^{b}\\log a}',
+      description: 'Membalik basis dan numerus menjadi 1 per logaritma',
+      category: 'Sifat'
+    },
+    {
+      label: 'Pangkat Basis Logaritma',
+      latex: 'a^{^{a}\\log b} = b',
+      description: 'Bilangan a dipangkatkan a log b menghasilkan b',
+      category: 'Sifat'
+    },
+    {
+      label: 'Persamaan Logaritma',
+      latex: '^{a}\\log f(x) = {}^{a}\\log g(x) \\implies f(x) = g(x)',
+      description: 'Penyelesaian persamaan logaritma basis sama',
+      category: 'Persamaan'
+    }
   ];
 
   // 2. SIMBOL LENGKAP (Operator Dasar, Relasi, Geometri, Himpunan, Panah)
@@ -342,6 +437,18 @@ export const MathEquationToolbar: React.FC<MathEquationToolbarProps> = ({
 
             <button
               type="button"
+              onClick={() => setActiveTab('logarithm')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
+                activeTab === 'logarithm'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              <span>🔢 Logaritma & Eksponen</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('symbols')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 ${
                 activeTab === 'symbols'
@@ -390,6 +497,86 @@ export const MathEquationToolbar: React.FC<MathEquationToolbarProps> = ({
                     onClick={() => handleInsertFormula(item.latex)}
                   />
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1B: LOGARITMA & EKSPONEN */}
+          {activeTab === 'logarithm' && (
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+              {/* Group 1: Format Standar Indonesia */}
+              <div className="space-y-1.5">
+                <div className="flex items-center space-x-1.5 text-[11px] font-bold text-blue-300">
+                  <span>🇮🇩 Format Kurikulum Indonesia (Basis Kiri Atas: ᵃlog b)</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                  {logarithmIndonesia.map((item, idx) => (
+                    <FormulaBtn
+                      key={idx}
+                      latex={item.latex}
+                      label={item.label}
+                      description={item.description}
+                      onClick={() => handleInsertFormula(item.latex)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Group 2: Format Internasional */}
+              <div className="space-y-1.5 pt-2 border-t border-white/5">
+                <div className="flex items-center space-x-1.5 text-[11px] font-bold text-purple-300">
+                  <span>🌐 Format Internasional / Scientific (log_a b & ln x)</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                  {logarithmInternational.map((item, idx) => (
+                    <FormulaBtn
+                      key={idx}
+                      latex={item.latex}
+                      label={item.label}
+                      description={item.description}
+                      onClick={() => handleInsertFormula(item.latex)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Group 3: Sifat-sifat Logaritma Lengkap */}
+              <div className="space-y-1.5 pt-2 border-t border-white/5">
+                <div className="flex items-center space-x-1.5 text-[11px] font-bold text-emerald-300">
+                  <span>📖 Sifat-Sifat & Identitas Logaritma Lengkap (SMA / SMK)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {logarithmIdentities.map((item, idx) => {
+                    let rendered = '';
+                    try {
+                      rendered = katex.renderToString(item.latex, { displayMode: false, throwOnError: false });
+                    } catch {
+                      rendered = item.latex;
+                    }
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => handleInsertFormula(item.latex)}
+                        className="p-2.5 rounded-xl bg-slate-900 border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 cursor-pointer transition space-y-1 group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-white group-hover:text-blue-300">
+                            {item.label}
+                          </span>
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                            {item.category}
+                          </span>
+                        </div>
+                        <div
+                          className="text-xs text-blue-300 font-semibold overflow-x-auto py-0.5"
+                          dangerouslySetInnerHTML={{ __html: rendered }}
+                        />
+                        <p className="text-[10px] text-slate-400 truncate">{item.description}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
