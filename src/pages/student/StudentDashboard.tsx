@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { DEMO_EXAM } from '../../lib/demoData';
 import { useAuth } from '../../context/AuthContext';
 import { useClasses } from '../../context/ClassContext';
-import { BookOpen, ClipboardList, Award, Plus, CheckCircle2, ChevronRight, Play, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle2, Play, AlertCircle, ClipboardList } from 'lucide-react';
 
 interface StudentDashboardProps {
   onStartExam: (examId: string) => void;
@@ -17,6 +16,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
   const [joinMessage, setJoinMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const joinedClasses = getJoinedClasses();
+  const joinedClassIds = joinedClasses.map(c => c.id);
+
+  // Load active exams matching student's joined classes
+  const savedExamsStr = localStorage.getItem('edumonitor_exams');
+  let activeExams: any[] = [];
+  try {
+    if (savedExamsStr) {
+      const allExams: any[] = JSON.parse(savedExamsStr);
+      activeExams = allExams.filter(e => joinedClassIds.includes(e.classId));
+    }
+  } catch {}
 
   const handleJoinClass = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,29 +73,44 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
         </div>
       </div>
 
-      {/* Active Exam Card */}
-      <div className="glass-panel-warning rounded-3xl p-6 border border-amber-500/40 shadow-xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
-                UJIAN AKTIF
-              </span>
-              <span className="text-xs text-amber-200">Batas Waktu: Hari ini, 23:59 WIB</span>
-            </div>
-            <h3 className="mt-2 text-lg font-bold text-white">{DEMO_EXAM.title}</h3>
-            <p className="text-xs text-slate-300">{DEMO_EXAM.className} • Durasi: {DEMO_EXAM.durationMinutes} Menit • {DEMO_EXAM.totalQuestions} Soal</p>
-          </div>
+      {/* Active Exam Card or Empty State */}
+      {activeExams.length > 0 ? (
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Ujian & Latihan Aktif ({activeExams.length})</h3>
+          {activeExams.map(ex => (
+            <div key={ex.id} className="glass-panel-warning rounded-3xl p-6 border border-amber-500/40 shadow-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
+                      UJIAN AKTIF
+                    </span>
+                    <span className="text-xs text-amber-200">Durasi: {ex.durationMinutes} Menit</span>
+                  </div>
+                  <h3 className="mt-2 text-lg font-bold text-white">{ex.title}</h3>
+                  <p className="text-xs text-slate-300">{ex.className} • {ex.totalQuestions} Soal • KKM: {ex.kkm}</p>
+                </div>
 
-          <button
-            onClick={() => onStartExam(DEMO_EXAM.id)}
-            className="flex items-center space-x-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3 text-xs font-bold text-white shadow-xl shadow-emerald-600/30 hover:from-emerald-500 hover:to-teal-500 transition active:scale-95"
-          >
-            <Play className="h-4 w-4 fill-current" />
-            <span>Mulai Ujian Sekarang</span>
-          </button>
+                <button
+                  onClick={() => onStartExam(ex.id)}
+                  className="flex items-center space-x-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-3 text-xs font-bold text-white shadow-xl shadow-emerald-600/30 hover:from-emerald-500 hover:to-teal-500 transition active:scale-95"
+                >
+                  <Play className="h-4 w-4 fill-current" />
+                  <span>Mulai Ujian Sekarang</span>
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className="glass-panel rounded-3xl p-6 text-center border border-white/10 space-y-2">
+          <div className="h-12 w-12 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center mx-auto text-slate-400">
+            <ClipboardList className="h-6 w-6" />
+          </div>
+          <h4 className="text-sm font-bold text-white">Belum Ada Ujian Aktif</h4>
+          <p className="text-xs text-slate-400">Belum ada jadwal ujian untuk kelas yang Anda ikuti. Gabung kelas terlebih dahulu dengan masukkan kode dari guru Anda.</p>
+        </div>
+      )}
 
       {/* My Classes Grid */}
       <div className="space-y-3">
@@ -171,4 +196,3 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ onStartExam,
     </div>
   );
 };
-

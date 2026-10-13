@@ -16,9 +16,7 @@ import { TeacherMaterialsPage } from './pages/teacher/TeacherMaterialsPage';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { StudentMaterialsPage } from './pages/student/StudentMaterialsPage';
 import { TakeExamPage } from './pages/student/TakeExamPage';
-import { DEMO_EXAM, DEMO_USERS } from './lib/demoData';
-import { MathText } from './components/common/MathText';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ClipboardList, Users, Play } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
   const { currentUser } = useAuth();
@@ -32,6 +30,23 @@ const MainAppContent: React.FC = () => {
   }
 
   const studentJoinedClasses = getJoinedClasses();
+  const studentJoinedClassIds = studentJoinedClasses.map(c => c.id);
+
+  // Load saved exams from localStorage
+  const savedExamsStr = localStorage.getItem('edumonitor_exams');
+  let teacherExams: any[] = [];
+  try {
+    if (savedExamsStr) teacherExams = JSON.parse(savedExamsStr);
+  } catch {}
+
+  const studentExams = teacherExams.filter(e => studentJoinedClassIds.includes(e.classId));
+
+  // Load saved results from localStorage
+  const savedResultsStr = localStorage.getItem('edumonitor_results');
+  let studentResults: any[] = [];
+  try {
+    if (savedResultsStr) studentResults = JSON.parse(savedResultsStr);
+  } catch {}
 
   // Fullscreen view for student taking exam
   if (isTakingExam && currentUser.role === 'STUDENT') {
@@ -93,19 +108,41 @@ const MainAppContent: React.FC = () => {
                         </button>
                       </div>
 
-                      <div className="glass-panel rounded-3xl p-6 border border-white/10 flex justify-between items-center">
-                        <div>
-                          <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">AKTIF</span>
-                          <h3 className="text-base font-bold text-white mt-1">{DEMO_EXAM.title}</h3>
-                          <p className="text-xs text-slate-400">{DEMO_EXAM.className} • {DEMO_EXAM.durationMinutes} Menit • {DEMO_EXAM.totalQuestions} Soal</p>
+                      {teacherExams.length === 0 ? (
+                        <div className="glass-panel rounded-3xl p-8 text-center border border-white/10 space-y-3">
+                          <div className="h-12 w-12 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center mx-auto text-slate-400">
+                            <ClipboardList className="h-6 w-6" />
+                          </div>
+                          <h3 className="text-base font-bold text-white">Belum Ada Ujian / Latihan Dibuat</h3>
+                          <p className="text-xs text-slate-400 max-w-sm mx-auto">Klik tombol di bawah ini untuk membuat ujian atau latihan baru untuk kelas Anda.</p>
+                          <button
+                            onClick={() => setIsCreatingExam(true)}
+                            className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500"
+                          >
+                            + Buat Ujian Pertama
+                          </button>
                         </div>
-                        <button
-                          onClick={() => setCurrentTab('monitoring')}
-                          className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/30 hover:bg-red-500"
-                        >
-                          Buka Monitoring Realtime
-                        </button>
-                      </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {teacherExams.map((ex: any) => (
+                            <div key={ex.id} className="glass-panel rounded-3xl p-6 border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                              <div>
+                                <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                                  {ex.status || 'AKTIF'}
+                                </span>
+                                <h3 className="text-base font-bold text-white mt-1">{ex.title}</h3>
+                                <p className="text-xs text-slate-400">{ex.className} • {ex.durationMinutes} Menit • {ex.totalQuestions} Soal • KKM: {ex.kkm}</p>
+                              </div>
+                              <button
+                                onClick={() => setCurrentTab('monitoring')}
+                                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-red-600/30 hover:bg-red-500 shrink-0"
+                              >
+                                Buka Monitoring Realtime
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -114,16 +151,12 @@ const MainAppContent: React.FC = () => {
               {currentTab === 'students' && (
                 <div className="space-y-4">
                   <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Daftar Siswa Terdaftar</h1>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {DEMO_USERS.filter(u => u.role === 'STUDENT').map(s => (
-                      <div key={s.id} className="glass-panel rounded-2xl p-4 border border-white/10 flex items-center space-x-3">
-                        <img src={s.avatarUrl} alt={s.name} className="h-10 w-10 rounded-full object-cover border border-blue-500/40" />
-                        <div>
-                          <div className="text-xs font-bold text-white">{s.name}</div>
-                          <div className="text-[10px] text-slate-400">{s.email}</div>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="glass-panel rounded-3xl p-8 text-center border border-white/10 space-y-2">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center mx-auto text-slate-400">
+                      <Users className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">Belum Ada Siswa Terdaftar</h3>
+                    <p className="text-xs text-slate-400">Siswa yang bergabung ke kelas Anda menggunakan kode kelas akan otomatis muncul di sini.</p>
                   </div>
                 </div>
               )}
@@ -143,19 +176,27 @@ const MainAppContent: React.FC = () => {
               {currentTab === 'exams' && (
                 <div className="space-y-4">
                   <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Ujian & Latihan Saya</h1>
-                  <div className="glass-panel-warning rounded-3xl p-6 border border-amber-500/30 flex justify-between items-center">
-                    <div>
-                      <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">AKTIF</span>
-                      <h3 className="text-base font-bold text-white mt-1">{DEMO_EXAM.title}</h3>
-                      <p className="text-xs text-slate-400">{DEMO_EXAM.className} • {DEMO_EXAM.durationMinutes} Menit</p>
+                  {studentExams.length === 0 ? (
+                    <div className="glass-panel rounded-3xl p-8 text-center border border-white/10 space-y-2">
+                      <p className="text-sm text-slate-400">Belum ada ujian atau latihan yang tersedia untuk kelas Anda.</p>
                     </div>
-                    <button
-                      onClick={() => setIsTakingExam(true)}
-                      className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500"
-                    >
-                      Kerjakan Ujian
-                    </button>
-                  </div>
+                  ) : (
+                    studentExams.map((ex: any) => (
+                      <div key={ex.id} className="glass-panel-warning rounded-3xl p-6 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                          <span className="rounded-md bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">AKTIF</span>
+                          <h3 className="text-base font-bold text-white mt-1">{ex.title}</h3>
+                          <p className="text-xs text-slate-400">{ex.className} • {ex.durationMinutes} Menit</p>
+                        </div>
+                        <button
+                          onClick={() => setIsTakingExam(true)}
+                          className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-500/30 hover:bg-blue-500"
+                        >
+                          Kerjakan Ujian
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
 
@@ -195,16 +236,26 @@ const MainAppContent: React.FC = () => {
               {currentTab === 'results' && (
                 <div className="space-y-4">
                   <h1 className="text-xl font-bold text-white border-b border-white/10 pb-4">Nilai & Riwayat Ujian Saya</h1>
-                  <div className="glass-panel rounded-3xl p-6 border border-white/10 flex justify-between items-center">
-                    <div>
-                      <h3 className="text-base font-bold text-white">Latihan Logaritma & Aljabar</h3>
-                      <p className="text-xs text-slate-400">Tanggal: 20 Januari 2026</p>
+                  {studentResults.length === 0 ? (
+                    <div className="glass-panel rounded-3xl p-8 text-center border border-white/10">
+                      <p className="text-sm text-slate-400">Belum ada riwayat ujian yang telah dikerjakan.</p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-extrabold text-blue-400">85 / 100</div>
-                      <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">LULUS KKM</span>
-                    </div>
-                  </div>
+                  ) : (
+                    studentResults.map((r: any) => (
+                      <div key={r.id} className="glass-panel rounded-3xl p-6 border border-white/10 flex justify-between items-center">
+                        <div>
+                          <h3 className="text-base font-bold text-white">{r.examTitle}</h3>
+                          <p className="text-xs text-slate-400">Tanggal: {new Date(r.submittedAt).toLocaleDateString('id-ID')}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-extrabold text-blue-400">{r.score} / {r.maxScore}</div>
+                          <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${r.passed ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>
+                            {r.passed ? 'LULUS KKM' : 'TIDAK LULUS'}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </>
@@ -229,4 +280,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-

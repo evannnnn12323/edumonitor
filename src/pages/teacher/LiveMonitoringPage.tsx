@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ExamAttempt, MonitorEvent, TeacherMessage, SeverityLevel, MessageType } from '../../types';
-import { DEMO_EXAM, DEMO_USERS } from '../../lib/demoData';
 import { calculateStudentRisk } from '../../lib/riskCalculator';
 import { SendWarningModal } from '../../components/teacher/SendWarningModal';
 import { BroadcastModal } from '../../components/teacher/BroadcastModal';
@@ -13,13 +12,9 @@ import {
   ShieldAlert,
   Users,
   Megaphone,
-  CheckCheck,
-  Clock,
   Search,
   Filter,
-  Activity,
-  Copy,
-  Monitor
+  Activity
 } from 'lucide-react';
 
 interface ToastAlert {
@@ -35,81 +30,8 @@ export const LiveMonitoringPage: React.FC = () => {
   const { currentUser } = useAuth();
   
   // Active attempts
-  const [attempts, setAttempts] = useState<ExamAttempt[]>([
-    {
-      id: 'att_1',
-      examId: DEMO_EXAM.id,
-      examTitle: DEMO_EXAM.title,
-      studentId: DEMO_USERS[1].id,
-      studentName: DEMO_USERS[1].name,
-      startedAt: new Date(Date.now() - 15 * 60000).toISOString(),
-      status: 'IN_PROGRESS',
-      currentQuestionIndex: 12,
-      flaggedQuestionIds: ['q_3'],
-      answers: { q_1: 'c3', q_2: 'c3', q_3: 'c2', q_4: 'c2', q_5: 'c3' },
-      riskScore: 2,
-      riskLevel: 'LOW',
-      isOnline: true,
-      lastPingAt: new Date().toISOString()
-    },
-    {
-      id: 'att_2',
-      examId: DEMO_EXAM.id,
-      examTitle: DEMO_EXAM.title,
-      studentId: DEMO_USERS[2].id,
-      studentName: DEMO_USERS[2].name,
-      startedAt: new Date(Date.now() - 20 * 60000).toISOString(),
-      status: 'IN_PROGRESS',
-      currentQuestionIndex: 16,
-      flaggedQuestionIds: [],
-      answers: { q_1: 'c3', q_2: 'c3', q_3: 'c2', q_4: 'c2' },
-      riskScore: 6,
-      riskLevel: 'MEDIUM',
-      isOnline: true,
-      lastPingAt: new Date().toISOString()
-    },
-    {
-      id: 'att_3',
-      examId: DEMO_EXAM.id,
-      examTitle: DEMO_EXAM.title,
-      studentId: DEMO_USERS[3].id,
-      studentName: DEMO_USERS[3].name,
-      startedAt: new Date(Date.now() - 10 * 60000).toISOString(),
-      status: 'IN_PROGRESS',
-      currentQuestionIndex: 8,
-      flaggedQuestionIds: ['q_7'],
-      answers: { q_1: 'c3' },
-      riskScore: 12,
-      riskLevel: 'HIGH',
-      isOnline: true,
-      lastPingAt: new Date().toISOString()
-    }
-  ]);
-
-  const [events, setEvents] = useState<MonitorEvent[]>([
-    {
-      id: 'e1',
-      studentId: DEMO_USERS[3].id,
-      studentName: DEMO_USERS[3].name,
-      examId: DEMO_EXAM.id,
-      attemptId: 'att_3',
-      eventType: 'TAB_HIDDEN',
-      timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
-      durationAwaySeconds: 32,
-      details: 'Siswa meninggalkan tab selama 32 detik'
-    },
-    {
-      id: 'e2',
-      studentId: DEMO_USERS[3].id,
-      studentName: DEMO_USERS[3].name,
-      examId: DEMO_EXAM.id,
-      attemptId: 'att_3',
-      eventType: 'PASTE_DETECTED',
-      timestamp: new Date(Date.now() - 2 * 60000).toISOString(),
-      details: 'Tempel teks terdeteksi (48 karakter)'
-    }
-  ]);
-
+  const [attempts, setAttempts] = useState<ExamAttempt[]>([]);
+  const [events, setEvents] = useState<MonitorEvent[]>([]);
   const [messages, setMessages] = useState<TeacherMessage[]>([]);
   const [toasts, setToasts] = useState<ToastAlert[]>([]);
 
@@ -127,7 +49,7 @@ export const LiveMonitoringPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
 
-  // Real-time Event Subscriptions (FASE 7 & 10)
+  // Real-time Event Subscriptions
   useEffect(() => {
     // Listen for events emitted by students taking exam
     const unsubEvents = realtimeBus.subscribe('student_monitor_event', (evt: MonitorEvent) => {
@@ -152,7 +74,7 @@ export const LiveMonitoringPage: React.FC = () => {
       }
     });
 
-    // Listen for student read receipts (FASE 10)
+    // Listen for student read receipts
     const unsubReads = realtimeBus.subscribe('student_read_warning', (data: { messageId: string; studentId: string; readAt: string; explanation?: string }) => {
       setMessages(prev => prev.map(m => {
         if (m.id === data.messageId) {
@@ -180,7 +102,7 @@ export const LiveMonitoringPage: React.FC = () => {
       teacherName: currentUser?.name || 'Pak Guru',
       studentId: warningModalState.studentId,
       studentName: warningModalState.studentName,
-      examId: DEMO_EXAM.id,
+      examId: 'exam_current',
       type,
       severity,
       message: messageText,
@@ -189,8 +111,6 @@ export const LiveMonitoringPage: React.FC = () => {
     };
 
     setMessages(prev => [newMsg, ...prev]);
-
-    // Broadcast instantly to Student Browser Overlay
     realtimeBus.publish('teacher_warning_to_student', newMsg);
   };
 
@@ -202,7 +122,7 @@ export const LiveMonitoringPage: React.FC = () => {
       teacherName: currentUser?.name || 'Pak Guru',
       studentId: 'ALL',
       studentName: 'Seluruh Siswa',
-      examId: DEMO_EXAM.id,
+      examId: 'exam_current',
       type: 'TEACHER_COMMENT',
       severity: 'INFO',
       message: broadcastText,
@@ -220,6 +140,11 @@ export const LiveMonitoringPage: React.FC = () => {
     const matchesRisk = riskFilter === 'ALL' || risk.level === riskFilter;
     return matchesSearch && matchesRisk;
   });
+
+  const onlineCount = attempts.filter(a => a.isOnline).length;
+  const inProgressCount = attempts.filter(a => a.status === 'IN_PROGRESS').length;
+  const completedCount = attempts.filter(a => a.status === 'SUBMITTED').length;
+  const highRiskCount = attempts.filter(a => calculateStudentRisk(events.filter(e => e.studentId === a.studentId)).level === 'HIGH').length;
 
   return (
     <div className="space-y-6">
@@ -259,7 +184,7 @@ export const LiveMonitoringPage: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            {DEMO_EXAM.title} • {DEMO_EXAM.className}
+            Pengawasan Langsung Pengerjaan Ujian Siswa
           </p>
         </div>
 
@@ -278,19 +203,19 @@ export const LiveMonitoringPage: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="rounded-2xl glass-panel p-4 border border-white/10">
           <div className="text-[11px] font-semibold text-slate-400">Peserta Online</div>
-          <div className="mt-1 text-2xl font-extrabold text-emerald-400">3 <span className="text-xs text-slate-500 font-normal">siswa</span></div>
+          <div className="mt-1 text-2xl font-extrabold text-emerald-400">{onlineCount} <span className="text-xs text-slate-500 font-normal">siswa</span></div>
         </div>
         <div className="rounded-2xl glass-panel p-4 border border-white/10">
           <div className="text-[11px] font-semibold text-slate-400">Sedang Mengerjakan</div>
-          <div className="mt-1 text-2xl font-extrabold text-blue-400">3 <span className="text-xs text-slate-500 font-normal">siswa</span></div>
+          <div className="mt-1 text-2xl font-extrabold text-blue-400">{inProgressCount} <span className="text-xs text-slate-500 font-normal">siswa</span></div>
         </div>
         <div className="rounded-2xl glass-panel p-4 border border-white/10">
           <div className="text-[11px] font-semibold text-slate-400">Selesai</div>
-          <div className="mt-1 text-2xl font-extrabold text-purple-400">0 <span className="text-xs text-slate-500 font-normal">siswa</span></div>
+          <div className="mt-1 text-2xl font-extrabold text-purple-400">{completedCount} <span className="text-xs text-slate-500 font-normal">siswa</span></div>
         </div>
         <div className="rounded-2xl glass-panel-danger p-4">
-          <div className="text-[11px] font-semibold text-red-300">Perlu Diperiksa (High Risk)</div>
-          <div className="mt-1 text-2xl font-extrabold text-red-400">1 <span className="text-xs text-red-300 font-normal">siswa</span></div>
+          <div className="text-[11px] font-semibold text-red-300">High Risk Indicator</div>
+          <div className="mt-1 text-2xl font-extrabold text-red-400">{highRiskCount} <span className="text-xs text-red-300 font-normal">siswa</span></div>
         </div>
         <div className="rounded-2xl glass-panel-accent p-4">
           <div className="text-[11px] font-semibold text-blue-300">Peringatan Terkirim</div>
@@ -330,134 +255,146 @@ export const LiveMonitoringPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Real-time Student Monitoring Table (Requirement #20) */}
-      <div className="glass-panel rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/10">
-              <tr>
-                <th className="px-4 py-3.5">Nama Siswa</th>
-                <th className="px-4 py-3.5">Status</th>
-                <th className="px-4 py-3.5">Progress Soal</th>
-                <th className="px-4 py-3.5">Waktu Tersisa</th>
-                <th className="px-4 py-3.5 text-center">Pindah Tab</th>
-                <th className="px-4 py-3.5 text-center">Paste</th>
-                <th className="px-4 py-3.5 text-center">Fullscreen Exit</th>
-                <th className="px-4 py-3.5">Risk Indicator</th>
-                <th className="px-4 py-3.5 text-right">Aksi Pengawas</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filteredAttempts.map((attempt) => {
-                const studentEvts = events.filter(e => e.studentId === attempt.studentId);
-                const risk = calculateStudentRisk(studentEvts);
-                const progressPct = Math.round((attempt.currentQuestionIndex / DEMO_EXAM.totalQuestions) * 100);
-
-                return (
-                  <tr key={attempt.id} className="hover:bg-white/5 transition">
-                    
-                    {/* Student Name */}
-                    <td className="px-4 py-4 font-semibold text-white">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-blue-400 border border-white/10">
-                          {attempt.studentName.charAt(0)}
-                        </div>
-                        <div>
-                          <div>{attempt.studentName}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">ID: {attempt.studentId}</div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-4">
-                      <span className="flex items-center space-x-1.5 font-bold text-emerald-400">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 live-pulse"></span>
-                        <span>ONLINE</span>
-                      </span>
-                    </td>
-
-                    {/* Progress */}
-                    <td className="px-4 py-4">
-                      <div className="space-y-1 w-32">
-                        <div className="flex justify-between text-[10px]">
-                          <span>{attempt.currentQuestionIndex}/{DEMO_EXAM.totalQuestions} Soal</span>
-                          <span className="font-bold text-blue-400">{progressPct}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${progressPct}%` }}></div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Remaining Time */}
-                    <td className="px-4 py-4 font-mono font-medium text-slate-200">
-                      31:20
-                    </td>
-
-                    {/* Tab Switch Count */}
-                    <td className="px-4 py-4 text-center font-bold text-amber-400">
-                      {risk.tabSwitchCount}
-                    </td>
-
-                    {/* Paste Count */}
-                    <td className="px-4 py-4 text-center font-bold text-purple-400">
-                      {risk.pasteCount}
-                    </td>
-
-                    {/* Fullscreen Exit */}
-                    <td className="px-4 py-4 text-center font-bold text-blue-400">
-                      {risk.fullscreenExitCount}
-                    </td>
-
-                    {/* Risk Badge */}
-                    <td className="px-4 py-4">
-                      {risk.level === 'HIGH' && (
-                        <span className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-bold text-red-300 ring-1 ring-red-500/40 flex items-center space-x-1 w-fit">
-                          <ShieldAlert className="h-3 w-3" />
-                          <span>HIGH RISK ({risk.score})</span>
-                        </span>
-                      )}
-                      {risk.level === 'MEDIUM' && (
-                        <span className="rounded-md bg-amber-500/20 px-2 py-1 text-[11px] font-bold text-amber-300 ring-1 ring-amber-500/40 flex items-center space-x-1 w-fit">
-                          <AlertTriangle className="h-3 w-3" />
-                          <span>MEDIUM ({risk.score})</span>
-                        </span>
-                      )}
-                      {risk.level === 'LOW' && (
-                        <span className="rounded-md bg-emerald-500/20 px-2 py-1 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-500/40 w-fit block">
-                          LOW RISK ({risk.score})
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => setSelectedStudentAttempt(attempt)}
-                          className="flex items-center space-x-1 rounded-xl bg-slate-800 border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-slate-200 hover:bg-white/10"
-                        >
-                          <Eye className="h-3.5 w-3.5 text-blue-400" />
-                          <span>Pantau</span>
-                        </button>
-                        <button
-                          onClick={() => setWarningModalState({ isOpen: true, studentId: attempt.studentId, studentName: attempt.studentName })}
-                          className="flex items-center space-x-1 rounded-xl bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-amber-500/30"
-                        >
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-                          <span>Beri Peringatan</span>
-                        </button>
-                      </div>
-                    </td>
-
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Real-time Student Monitoring Table */}
+      {filteredAttempts.length === 0 ? (
+        <div className="glass-panel rounded-3xl p-10 text-center border border-white/10 space-y-3">
+          <div className="h-12 w-12 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center mx-auto text-slate-400">
+            <Activity className="h-6 w-6" />
+          </div>
+          <h3 className="text-sm font-bold text-white">Belum Ada Siswa Aktif Ujian</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Siswa yang mulai mengerjakan ujian secara live akan otomatis muncul di tabel monitoring ini secara realtime beserta indikator keamanannya.
+          </p>
         </div>
-      </div>
+      ) : (
+        <div className="glass-panel rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/10">
+                <tr>
+                  <th className="px-4 py-3.5">Nama Siswa</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5">Progress Soal</th>
+                  <th className="px-4 py-3.5">Waktu Tersisa</th>
+                  <th className="px-4 py-3.5 text-center">Pindah Tab</th>
+                  <th className="px-4 py-3.5 text-center">Paste</th>
+                  <th className="px-4 py-3.5 text-center">Fullscreen Exit</th>
+                  <th className="px-4 py-3.5">Risk Indicator</th>
+                  <th className="px-4 py-3.5 text-right">Aksi Pengawas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filteredAttempts.map((attempt) => {
+                  const studentEvts = events.filter(e => e.studentId === attempt.studentId);
+                  const risk = calculateStudentRisk(studentEvts);
+                  const progressPct = Math.round((attempt.currentQuestionIndex / (attempt.answers ? Object.keys(attempt.answers).length + 1 : 1)) * 100);
+
+                  return (
+                    <tr key={attempt.id} className="hover:bg-white/5 transition">
+                      
+                      {/* Student Name */}
+                      <td className="px-4 py-4 font-semibold text-white">
+                        <div className="flex items-center space-x-3">
+                          <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-blue-400 border border-white/10">
+                            {attempt.studentName.charAt(0)}
+                          </div>
+                          <div>
+                            <div>{attempt.studentName}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">ID: {attempt.studentId}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-4 py-4">
+                        <span className="flex items-center space-x-1.5 font-bold text-emerald-400">
+                          <span className="h-2 w-2 rounded-full bg-emerald-400 live-pulse"></span>
+                          <span>ONLINE</span>
+                        </span>
+                      </td>
+
+                      {/* Progress */}
+                      <td className="px-4 py-4">
+                        <div className="space-y-1 w-32">
+                          <div className="flex justify-between text-[10px]">
+                            <span>{attempt.currentQuestionIndex} Soal</span>
+                            <span className="font-bold text-blue-400">{progressPct}%</span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full" style={{ width: `${progressPct}%` }}></div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Remaining Time */}
+                      <td className="px-4 py-4 font-mono font-medium text-slate-200">
+                        Aktif
+                      </td>
+
+                      {/* Tab Switch Count */}
+                      <td className="px-4 py-4 text-center font-bold text-amber-400">
+                        {risk.tabSwitchCount}
+                      </td>
+
+                      {/* Paste Count */}
+                      <td className="px-4 py-4 text-center font-bold text-purple-400">
+                        {risk.pasteCount}
+                      </td>
+
+                      {/* Fullscreen Exit */}
+                      <td className="px-4 py-4 text-center font-bold text-blue-400">
+                        {risk.fullscreenExitCount}
+                      </td>
+
+                      {/* Risk Badge */}
+                      <td className="px-4 py-4">
+                        {risk.level === 'HIGH' && (
+                          <span className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] font-bold text-red-300 ring-1 ring-red-500/40 flex items-center space-x-1 w-fit">
+                            <ShieldAlert className="h-3 w-3" />
+                            <span>HIGH RISK ({risk.score})</span>
+                          </span>
+                        )}
+                        {risk.level === 'MEDIUM' && (
+                          <span className="rounded-md bg-amber-500/20 px-2 py-1 text-[11px] font-bold text-amber-300 ring-1 ring-amber-500/40 flex items-center space-x-1 w-fit">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>MEDIUM ({risk.score})</span>
+                          </span>
+                        )}
+                        {risk.level === 'LOW' && (
+                          <span className="rounded-md bg-emerald-500/20 px-2 py-1 text-[11px] font-bold text-emerald-300 ring-1 ring-emerald-500/40 w-fit block">
+                            LOW RISK ({risk.score})
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => setSelectedStudentAttempt(attempt)}
+                            className="flex items-center space-x-1 rounded-xl bg-slate-800 border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-slate-200 hover:bg-white/10"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-blue-400" />
+                            <span>Pantau</span>
+                          </button>
+                          <button
+                            onClick={() => setWarningModalState({ isOpen: true, studentId: attempt.studentId, studentName: attempt.studentName })}
+                            className="flex items-center space-x-1 rounded-xl bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-amber-500/30"
+                          >
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                            <span>Beri Peringatan</span>
+                          </button>
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Modals & Panels */}
       <SendWarningModal

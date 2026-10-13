@@ -20,10 +20,10 @@ export const ClassProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       } catch (e) {}
     }
-    return DEMO_CLASSES;
+    return [];
   });
 
   const [joinedClassIds, setJoinedClassIds] = useState<string[]>(() => {
@@ -34,7 +34,7 @@ export const ClassProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (Array.isArray(parsed)) return parsed;
       } catch (e) {}
     }
-    return ['class_mtk_x_a'];
+    return [];
   });
 
   // Helper to ensure teacherName uses the latest saved teacher name

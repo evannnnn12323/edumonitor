@@ -25,10 +25,52 @@ interface TakeExamPageProps {
   onFinishExam: () => void;
 }
 
-export const TakeExamPage: React.FC<TakeExamPageProps> = ({ onFinishExam }) => {
+export const TakeExamPage: React.FC<TakeExamPageProps> = ({ examId, onFinishExam }) => {
   const { currentUser } = useAuth();
-  const exam: Exam = DEMO_EXAM;
-  const questions: Question[] = DEMO_QUESTIONS;
+  const savedExamsStr = localStorage.getItem('edumonitor_exams');
+  let loadedExam: any = null;
+  try {
+    if (savedExamsStr) {
+      const exams = JSON.parse(savedExamsStr);
+      loadedExam = examId ? exams.find((e: any) => e.id === examId) : exams[0];
+    }
+  } catch {}
+
+  const exam: Exam = loadedExam || {
+    id: 'exam_custom',
+    title: 'Ujian / Latihan Daring',
+    classId: '',
+    className: 'Kelas Ujian',
+    teacherId: '',
+    startDate: '',
+    endDate: '',
+    startTime: '',
+    endTime: '',
+    durationMinutes: 45,
+    totalQuestions: 0,
+    kkm: 75,
+    settings: {
+      randomizeQuestions: true,
+      randomizeChoices: true,
+      showScoreImmediately: true,
+      showDiscussion: true,
+      allowBackNavigation: true,
+      proctoringEnabled: true,
+      monitorTabSwitch: true,
+      monitorPaste: true,
+      monitorFullscreen: true,
+      allowRealtimeWarnings: true,
+      pasteMode: 'MONITOR_ONLY'
+    },
+    status: 'ACTIVE',
+    createdAt: new Date().toISOString()
+  };
+
+  const savedBankStr = localStorage.getItem('edumonitor_question_bank');
+  let questions: Question[] = [];
+  try {
+    if (savedBankStr) questions = JSON.parse(savedBankStr);
+  } catch {}
 
   const [hasConfirmedRules, setHasConfirmedRules] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -204,6 +246,26 @@ export const TakeExamPage: React.FC<TakeExamPageProps> = ({ onFinishExam }) => {
     const s = secs % 60;
     return `${h > 0 ? String(h).padStart(2, '0') + ':' : ''}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
+
+  if (questions.length === 0) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <div className="glass-panel rounded-3xl p-8 border border-white/10 shadow-2xl space-y-4">
+          <HelpCircle className="h-12 w-12 text-amber-400 mx-auto" />
+          <h2 className="text-lg font-bold text-white">Belum Ada Soal Terdaftar</h2>
+          <p className="text-xs text-slate-400">
+            Belum ada soal yang tersedia untuk ujian ini. Silakan tambahkan soal terlebih dahulu melalui menu <strong>Bank Soal</strong>.
+          </p>
+          <button
+            onClick={onFinishExam}
+            className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:bg-blue-500"
+          >
+            Kembali ke Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Rule Confirmation Screen (Requirement #7)
   if (!hasConfirmedRules) {
